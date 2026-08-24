@@ -11,9 +11,7 @@ import {
   ShieldCheck,
   Database,
   BarChart3,
-  FileDown,
 } from 'lucide-react';
-import { ReraNamespace } from '@/types/rera';
 
 interface EmptyStateProps {
   onSelectPrompt: (promptText: string) => void;
@@ -56,10 +54,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Complaints & Adjudication',
       subtitle: 'Form M / Form N & Interest Calculation',
       icon: FileText,
-      color: 'border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 hover:border-emerald-500/50',
-      iconColor: 'text-emerald-500 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40',
+      color: 'border-indigo-500/20 bg-indigo-50/40 dark:bg-indigo-950/20 hover:border-indigo-500/50',
+      iconColor: 'text-indigo-500 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40',
       badgeText: 'Pinecone: rera-complaints',
-      badgeClass: 'bg-emerald-100/80 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      badgeClass: 'bg-indigo-100/80 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
       prompts: [
         'How do I calculate delayed possession interest using SBI MCLR + 2% per annum under Karnataka Rule 18?',
         'What is the procedural difference between filing Form M (Authority) and Form N (Adjudicating Officer)?',
@@ -87,14 +85,14 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
     <div className="w-full max-w-4xl mx-auto px-4 py-6 md:py-10 flex flex-col items-center justify-center space-y-6 md:space-y-8 animate-fade-in">
       {/* Hero Badge & Title */}
       <div className="text-center space-y-3 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-200 dark:bg-zinc-800/90 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold shadow-2xs">
+          <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
           <span>Tri-Database Hybrid Agentic RAG Engine</span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
           Authoritative Legal Advisory for{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-600 to-zinc-400 dark:from-white dark:via-zinc-200 dark:to-zinc-400">
             Karnataka Real Estate
           </span>
         </h1>
@@ -142,7 +140,7 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
                     className="w-full text-left p-2.5 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white bg-white/70 dark:bg-zinc-900/60 hover:bg-white dark:hover:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-800 transition-all flex items-center justify-between group cursor-pointer shadow-2xs"
                   >
                     <span className="line-clamp-2 leading-relaxed pr-2">{prompt}</span>
-                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all text-zinc-800 dark:text-zinc-200 flex-shrink-0" />
                   </button>
                 ))}
               </div>
@@ -154,7 +152,7 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       {/* Trust & Tri-Store Architecture Banner */}
       <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-[11px] text-zinc-500 dark:text-zinc-400 pt-1">
         <div className="flex items-center gap-1.5">
-          <Database className="w-3.5 h-3.5 text-emerald-500" />
+          <Database className="w-3.5 h-3.5 text-zinc-400" />
           <span>Pinecone + Astra DB + Supabase SQL</span>
         </div>
         <span className="hidden sm:inline text-zinc-300 dark:text-zinc-700">•</span>

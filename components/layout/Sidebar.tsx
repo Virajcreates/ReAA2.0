@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from 'react';
 import { Conversation } from '@/types/chat';
-import { RERA_NAMESPACES, ReraNamespace } from '@/types/rera';
 import {
   Plus,
   MessageSquare,
@@ -12,13 +11,9 @@ import {
   X,
   Search,
   Scale,
-  Database,
   ChevronLeft,
   Server,
-  Layers,
-  Cpu,
 } from 'lucide-react';
-import { formatDate, getNamespaceBadgeClasses } from '@/lib/utils';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -114,11 +109,11 @@ export function Sidebar({
         <div className="p-3.5 sm:p-4 border-b border-zinc-200/80 dark:border-zinc-800/80 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
+              <div className="w-5 h-5 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white">
                 <Scale className="w-3 h-3" />
               </div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
-                Consultation History
+                Consultations
               </span>
             </div>
 
@@ -137,7 +132,7 @@ export function Sidebar({
               onNewConsultation();
               if (window.innerWidth < 768) onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition-all duration-200 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold shadow-sm transition-all duration-200 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Consultation</span>
@@ -151,7 +146,7 @@ export function Sidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search consultations..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-zinc-850 dark:bg-zinc-900 border border-zinc-700/60 dark:border-zinc-800 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 focus:border-zinc-400"
             />
           </div>
         </div>
@@ -182,15 +177,15 @@ export function Sidebar({
                       }}
                       className={`group relative flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-150 text-xs ${
                         isActive
-                          ? 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-900 dark:text-emerald-200 font-medium border border-emerald-500/30'
-                          : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-transparent'
+                          ? 'bg-zinc-800/90 text-white font-medium border border-zinc-700/80 shadow-2xs'
+                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850/60 border border-transparent'
                       }`}
                     >
                       {/* Icon + Title */}
                       <div className="flex items-center gap-2 min-w-0 flex-1 mr-1.5">
                         <MessageSquare
                           className={`w-3.5 h-3.5 flex-shrink-0 ${
-                            isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'
+                            isActive ? 'text-zinc-200' : 'text-zinc-500'
                           }`}
                         />
 
@@ -205,7 +200,7 @@ export function Sidebar({
                               if (e.key === 'Escape') setEditingId(null);
                             }}
                             autoFocus
-                            className="w-full bg-white dark:bg-zinc-800 text-xs px-1.5 py-0.5 rounded border border-emerald-500 text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                            className="w-full bg-zinc-800 text-xs px-1.5 py-0.5 rounded border border-zinc-500 text-white focus:outline-none"
                           />
                         ) : (
                           <span className="truncate">{conv.title}</span>
@@ -218,7 +213,7 @@ export function Sidebar({
                           <>
                             <button
                               onClick={(e) => handleSaveRename(conv.id, e)}
-                              className="p-1 text-emerald-600 hover:text-emerald-700 cursor-pointer"
+                              className="p-1 text-zinc-200 hover:text-white cursor-pointer"
                               title="Save title"
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -228,7 +223,7 @@ export function Sidebar({
                                 e.stopPropagation();
                                 setEditingId(null);
                               }}
-                              className="p-1 text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                              className="p-1 text-zinc-400 hover:text-zinc-200 cursor-pointer"
                               title="Cancel"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -238,7 +233,7 @@ export function Sidebar({
                           <>
                             <button
                               onClick={(e) => handleStartRename(conv, e)}
-                              className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                              className="p-1 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
                               title="Rename consultation"
                             >
                               <Edit2 className="w-3 h-3" />
@@ -248,7 +243,7 @@ export function Sidebar({
                                 e.stopPropagation();
                                 onDeleteConversation(conv.id);
                               }}
-                              className="p-1 text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
+                              className="p-1 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
                               title="Delete consultation"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -265,20 +260,20 @@ export function Sidebar({
         </div>
 
         {/* Footer: Tri-Database Engine Status & Clear History */}
-        <div className="p-3.5 border-t border-zinc-200/80 dark:border-zinc-800/80 space-y-2.5 bg-white/40 dark:bg-zinc-900/40">
+        <div className="p-3.5 border-t border-zinc-200/80 dark:border-zinc-800/80 space-y-2.5 bg-zinc-900/60 dark:bg-zinc-900/40">
           <div className="space-y-1">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-              <Server className="w-3 h-3 text-emerald-500" />
+              <Server className="w-3 h-3 text-zinc-400" />
               <span>Storage Engines Connected (3)</span>
             </span>
             <div className="grid grid-cols-3 gap-1 text-[9px] font-mono">
-              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60">
+              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-blue-500/10 text-blue-300 border-blue-500/30">
                 Pinecone
               </span>
-              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60">
+              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-cyan-500/10 text-cyan-300 border-cyan-500/30">
                 Astra DB
               </span>
-              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60">
+              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-indigo-500/10 text-indigo-300 border-indigo-500/30">
                 Supabase
               </span>
             </div>
@@ -291,7 +286,7 @@ export function Sidebar({
                   onClearAll();
                 }
               }}
-              className="w-full flex items-center justify-center gap-1.5 py-1 text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 py-1 text-[11px] text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
             >
               <Trash2 className="w-3 h-3" />
               <span>Clear History</span>

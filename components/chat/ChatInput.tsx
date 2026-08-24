@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Send, Square, Sparkles, Database, ShieldCheck } from 'lucide-react';
+import { Send, Square, Sparkles } from 'lucide-react';
 import { ReraNamespace } from '@/types/rera';
 
 interface ChatInputProps {
@@ -63,7 +63,7 @@ export function ChatInput({
       {/* Quick Suggestions Chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-1.5 no-scrollbar">
         <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider whitespace-nowrap flex items-center gap-1 mr-1">
-          <Sparkles className="w-3 h-3 text-emerald-500" />
+          <Sparkles className="w-3 h-3 text-zinc-400" />
           <span>Quick Inquiries:</span>
         </span>
         {quickTags.map((tag, idx) => (
@@ -71,7 +71,7 @@ export function ChatInput({
             key={idx}
             onClick={() => onSendMessage(tag.prompt)}
             disabled={isBusy}
-            className="text-[11px] px-2.5 py-1 rounded-full bg-white/80 dark:bg-zinc-900/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-zinc-700 dark:text-zinc-300 hover:text-emerald-700 dark:hover:text-emerald-300 border border-zinc-200/80 dark:border-zinc-800 transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+            className="text-[11px] px-2.5 py-1 rounded-full bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white border border-zinc-200 dark:border-zinc-800 transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
           >
             {tag.label}
           </button>
@@ -79,11 +79,11 @@ export function ChatInput({
       </div>
 
       {/* Input Card Container */}
-      <div className="relative rounded-2xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800/90 shadow-xl shadow-zinc-200/40 dark:shadow-black/50 focus-within:ring-2 focus-within:ring-emerald-500/30 focus-within:border-emerald-500/60 transition-all duration-200">
+      <div className="relative rounded-2xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/40 dark:shadow-black/50 focus-within:ring-2 focus-within:ring-zinc-400/30 dark:focus-within:ring-zinc-600/40 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 transition-all duration-200">
         {/* Status Indicator Pill if actively streaming */}
         {isStreaming && statusText && (
-          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50/80 dark:bg-emerald-950/40 border-b border-emerald-100 dark:border-emerald-900/40 rounded-t-2xl text-[11px] text-emerald-700 dark:text-emerald-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-zinc-100 dark:bg-zinc-850 border-b border-zinc-200 dark:border-zinc-750 rounded-t-2xl text-[11px] text-zinc-800 dark:text-zinc-200">
+            <span className="w-2 h-2 rounded-full bg-zinc-400 dark:bg-zinc-300 animate-ping" />
             <span className="font-medium truncate">{statusText}</span>
           </div>
         )}
@@ -120,7 +120,7 @@ export function ChatInput({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!input.trim() || isBusy}
-                className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 text-white hover:from-emerald-500 hover:to-teal-500 transition-all duration-200 shadow-md shadow-emerald-500/25 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
+                className="p-2 sm:p-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white transition-all duration-200 shadow-md shadow-black/20 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
                 title="Send inquiry"
               >
                 <Send className="w-4 h-4" />

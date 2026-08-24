@@ -9,8 +9,8 @@
     --border: #e4e4e7;
     --card: #ffffff;
     --card-foreground: #09090b;
-    --primary: #059669;
-    --primary-foreground: #ffffff;
+    --primary: #18181b;
+    --primary-foreground: #fafafa;
     --sidebar-bg: #f4f4f5;
     --sidebar-border: #e4e4e7;
     --sidebar-hover: #e4e4e7;
@@ -22,7 +22,7 @@
     --border: #27272a;
     --card: #121215;
     --card-foreground: #fafafa;
-    --primary: #10b981;
+    --primary: #fafafa;
     --primary-foreground: #09090b;
     --sidebar-bg: #0d0d10;
     --sidebar-border: #1e1e24;
@@ -70,7 +70,7 @@ body {
 
 /* Text Selection */
 ::selection {
-  background-color: rgba(16, 185, 129, 0.3);
+  background-color: rgba(255, 255, 255, 0.15);
   color: inherit;
 }
 

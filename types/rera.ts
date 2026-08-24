@@ -42,9 +42,9 @@ export const RERA_NAMESPACES: Record<ReraNamespace, NamespaceInfo> = {
     label: 'Adjudications & Complaints',
     shortLabel: 'Complaints & Adjudication',
     description: 'Adjudicating officer orders, Form M/N complaints, interest awards, defect liabilities',
-    color: 'text-emerald-500 dark:text-emerald-400',
-    bgColor: 'bg-emerald-500/10 dark:bg-emerald-500/15',
-    borderColor: 'border-emerald-500/30 dark:border-emerald-500/40',
+    color: 'text-indigo-500 dark:text-indigo-400',
+    bgColor: 'bg-indigo-500/10 dark:bg-indigo-500/15',
+    borderColor: 'border-indigo-500/30 dark:border-indigo-500/40',
     iconName: 'FileText',
   },
   'rera-projects': {

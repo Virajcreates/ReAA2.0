@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'K-RERA Advisory AI | Karnataka Real Estate Legal Assistant',
+  title: 'ReAA 2.0 | Karnataka Real Estate Advisory AI',
   description:
-    'Authoritative AI legal advisor for Karnataka Real Estate Regulatory Authority (K-RERA), RERA Act 2016, and Karnataka RERA Rules 2017 with multi-namespace Pinecone vector grounding.',
+    'Authoritative hybrid vector and relational Text-to-SQL AI advisor for Karnataka Real Estate Regulatory Authority (K-RERA), RERA Act 2016, and Karnataka RERA Rules 2017.',
   keywords: [
     'K-RERA',
     'Karnataka RERA',
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     'Karnataka RERA Rules 2017',
     'Bangalore Real Estate Legal Advice',
   ],
-  authors: [{ name: 'K-RERA Advisory System' }],
+  authors: [{ name: 'ReAA Advisory System' }],
   icons: {
     icon: '/favicon.ico',
   },
@@ -35,7 +35,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="antialiased min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col selection:bg-emerald-500 selection:text-white">
+      <body className="antialiased min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col selection:bg-zinc-800 selection:text-white">
         {children}
       </body>
     </html>

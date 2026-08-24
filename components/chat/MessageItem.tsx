@@ -16,9 +16,7 @@ import {
   Database,
   Layers,
   ExternalLink,
-  Bot,
   RotateCw,
-  Table as TableIcon,
 } from 'lucide-react';
 import { getNamespaceBadgeClasses } from '@/lib/utils';
 import { RERA_NAMESPACES } from '@/types/rera';
@@ -52,7 +50,7 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
         {/* Avatar */}
         <div className="flex-shrink-0 pt-0.5">
           {isAssistant ? (
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-500 flex items-center justify-center text-white shadow-sm shadow-emerald-500/20 ring-1 ring-emerald-500/30">
+            <div className="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-700 dark:border-zinc-300 flex items-center justify-center shadow-sm">
               <Scale className="w-4 h-4" />
             </div>
           ) : (
@@ -73,8 +71,8 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
 
               {/* Glowing Thinking Pill Indicator */}
               {isAssistant && message.status === 'generating' && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium animate-tool-pulse">
-                  <Sparkles className="w-3 h-3 text-emerald-500 animate-spin" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-medium animate-tool-pulse">
+                  <Sparkles className="w-3 h-3 text-zinc-500 dark:text-zinc-400 animate-spin" />
                   <span>Synthesizing legal opinion...</span>
                 </span>
               )}
@@ -97,8 +95,8 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
                 >
                   {copied ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                      <span className="text-emerald-500 font-medium">Copied</span>
+                      <Check className="w-3.5 h-3.5 text-zinc-100" />
+                      <span className="text-zinc-900 dark:text-zinc-100 font-medium">Copied</span>
                     </>
                   ) : (
                     <>
@@ -193,7 +191,7 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
                       </strong>
                     ),
                     blockquote: ({ children }) => (
-                      <blockquote className="border-l-3 border-emerald-500 pl-3.5 py-1.5 my-3 bg-emerald-50/40 dark:bg-emerald-950/20 text-zinc-700 dark:text-zinc-300 rounded-r-lg text-xs md:text-sm">
+                      <blockquote className="border-l-3 border-zinc-400 dark:border-zinc-500 pl-3.5 py-1.5 my-3 bg-zinc-100/60 dark:bg-zinc-900/60 text-zinc-700 dark:text-zinc-300 rounded-r-lg text-xs md:text-sm">
                         {children}
                       </blockquote>
                     ),
@@ -205,7 +203,7 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
                       </div>
                     ),
                     thead: ({ children }) => (
-                      <thead className="bg-zinc-50 dark:bg-zinc-800/80 font-semibold text-zinc-900 dark:text-zinc-100">
+                      <thead className="bg-zinc-100 dark:bg-zinc-800 font-semibold text-zinc-900 dark:text-zinc-100">
                         {children}
                       </thead>
                     ),
@@ -234,7 +232,7 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 underline underline-offset-3 font-medium inline-flex items-center gap-1 break-words transition-colors"
+                        className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 underline underline-offset-3 font-medium inline-flex items-center gap-1 break-words transition-colors"
                         {...props}
                       >
                         <span>{children}</span>
@@ -244,7 +242,7 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
                     code: ({ children, className }) => {
                       const isInline = !className;
                       return isInline ? (
-                        <code className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800/80 text-emerald-600 dark:text-emerald-400 font-mono text-xs border border-zinc-200/50 dark:border-zinc-700/50">
+                        <code className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-200 font-mono text-xs border border-zinc-200/50 dark:border-zinc-700/50">
                           {children}
                         </code>
                       ) : (
@@ -264,7 +262,7 @@ export function MessageItem({ message, onRegenerate }: MessageItemProps) {
                 </div>
               ) : (
                 <div className="flex items-center gap-3 py-3 text-zinc-400 dark:text-zinc-500 text-xs md:text-sm">
-                  <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                  <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
                   <span>Consulting statutory provisions and database indices...</span>
                 </div>
               )}

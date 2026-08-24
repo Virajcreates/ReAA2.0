@@ -3,7 +3,7 @@
 import React from 'react';
 import { CitationItem } from '@/types/rera';
 import { getNamespaceBadgeClasses } from '@/lib/utils';
-import { X, ExternalLink, ShieldCheck, Scale, Building2, Gavel, FileText } from 'lucide-react';
+import { X, ExternalLink, ShieldCheck, Scale, Building2, Gavel, FileText, Link } from 'lucide-react';
 
 interface CitationModalProps {
   citation: CitationItem | null;
@@ -23,9 +23,11 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
       case 'rera-litigation':
         return <Gavel className="w-5 h-5 text-purple-500" />;
       case 'rera-complaints':
-        return <FileText className="w-5 h-5 text-emerald-500" />;
+        return <FileText className="w-5 h-5 text-indigo-500" />;
       case 'rera-projects':
         return <Building2 className="w-5 h-5 text-amber-500" />;
+      case 'rera-links':
+        return <Link className="w-5 h-5 text-cyan-500" />;
       default:
         return <ShieldCheck className="w-5 h-5 text-zinc-500" />;
     }
@@ -33,7 +35,7 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -67,7 +69,7 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -111,8 +113,8 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
         {/* Footer */}
         <div className="flex items-center justify-between p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
           <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Retrieved from K-RERA Vector Knowledge Base</span>
+            <ShieldCheck className="w-4 h-4 text-blue-500" />
+            <span>Retrieved from K-RERA Knowledge Base</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -121,7 +123,7 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
                 href={citation.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                className="flex items-center gap-1.5 text-xs font-medium text-blue-500 dark:text-blue-400 hover:underline"
               >
                 <span>View Official Source</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -129,7 +131,7 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
             )}
             <button
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-white transition-colors"
+              className="px-4 py-2 text-xs font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-white transition-colors cursor-pointer"
             >
               Close
             </button>
