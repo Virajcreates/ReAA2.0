@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getGeminiClient, GEMINI_CHAT_MODEL, GEMINI_FALLBACK_MODEL } from '@/lib/gemini';
 import { executeRAGRetrieval } from '@/lib/rag/engine';
 import { buildRAGPrompt, KRERA_SYSTEM_PROMPT } from '@/lib/rag/prompts';
+import { runAgenticSql, KRERA_SQL_TOOL } from '@/lib/supabase-service';
 import { ChatRequestPayload } from '@/types/chat';
 
 export const runtime = 'nodejs';
@@ -50,9 +51,9 @@ export async function POST(req: NextRequest) {
 
         try {
           // 1. Status: Routing
-          safeSend('status', { statusText: 'Analyzing query intent & selecting K-RERA namespaces...' });
+          safeSend('status', { statusText: 'Analyzing query intent & selecting K-RERA vector stores...' });
 
-          // 2. Perform intelligent RAG retrieval
+          // 2. Perform intelligent hybrid RAG retrieval (Pinecone + Astra DB)
           const ragResult = await executeRAGRetrieval(userQuery, namespaces);
 
           // Emit routing results
@@ -72,9 +73,9 @@ export async function POST(req: NextRequest) {
           });
 
           // 4. Status: Synthesizing
-          safeSend('status', { statusText: 'Generating advisory response with statutory grounding...' });
+          safeSend('status', { statusText: 'Formulating advisory response with statutory grounding...' });
 
-          // 5. LLM Generation & Streaming
+          // 5. LLM Generation & Streaming with Text-to-SQL tool capability
           const gemini = getGeminiClient();
           const ragPrompt = buildRAGPrompt(userQuery, ragResult.combinedContext, ragResult.citations);
 
@@ -83,8 +84,8 @@ export async function POST(req: NextRequest) {
           if (gemini) {
             // Models to try in cascade
             const candidateModels = [
-              GEMINI_CHAT_MODEL,
               'gemini-3.6-flash',
+              GEMINI_CHAT_MODEL,
               GEMINI_FALLBACK_MODEL,
               'gemini-1.5-flash',
             ];
@@ -96,9 +97,11 @@ export async function POST(req: NextRequest) {
               triedModels.add(modelName);
 
               try {
+                // Initialize model with Text-to-SQL function declaration
                 const model = gemini.getGenerativeModel({
                   model: modelName,
                   systemInstruction: KRERA_SYSTEM_PROMPT,
+                  tools: [KRERA_SQL_TOOL as any],
                 });
 
                 const contents = [];
@@ -115,7 +118,69 @@ export async function POST(req: NextRequest) {
                   parts: [{ text: ragPrompt }],
                 });
 
-                const resultStream = await model.generateContentStream({ contents });
+                // Check if the model requests a Text-to-SQL tool call
+                const initialResponse = await model.generateContent({ contents });
+                const functionCalls = initialResponse.response.functionCalls();
+
+                if (functionCalls && functionCalls.length > 0) {
+                  const call = functionCalls[0];
+
+                  if (call.name === 'query_krera_sql_database') {
+                    const sqlQuery = (call.args as any).sql_query;
+                    safeSend('status', {
+                      statusText: 'Executing statistical database query on PostgreSQL...',
+                    });
+
+                    const sqlResult = await runAgenticSql(sqlQuery);
+
+                    // Synthesize final response using SQL results
+                    const sqlSynthesisPrompt = `${ragPrompt}
+
+### DATABASE STATISTICAL QUERY EXECUTION:
+SQL Executed:
+\`\`\`sql
+${sqlResult.sql}
+\`\`\`
+
+Query Results (${sqlResult.rowCount || 0} rows):
+\`\`\`json
+${JSON.stringify(sqlResult.data || sqlResult.error, null, 2)}
+\`\`\`
+
+INSTRUCTIONS:
+Synthesize an authoritative, highly detailed response answering the user query using the database query results above alongside any relevant retrieved K-RERA regulatory provisions. Present data cleanly using Markdown tables and bullet points.`;
+
+                    const streamModel = gemini.getGenerativeModel({
+                      model: modelName,
+                      systemInstruction: KRERA_SYSTEM_PROMPT,
+                    });
+
+                    const finalStream = await streamModel.generateContentStream({
+                      contents: [
+                        ...contents.slice(0, -1),
+                        { role: 'user', parts: [{ text: sqlSynthesisPrompt }] },
+                      ],
+                    });
+
+                    for await (const chunk of finalStream.stream) {
+                      const text = chunk.text();
+                      if (text) {
+                        safeSend('token', { text });
+                      }
+                    }
+
+                    streamCompleted = true;
+                    break;
+                  }
+                }
+
+                // If no function call was needed, stream directly
+                const streamModel = gemini.getGenerativeModel({
+                  model: modelName,
+                  systemInstruction: KRERA_SYSTEM_PROMPT,
+                });
+
+                const resultStream = await streamModel.generateContentStream({ contents });
 
                 for await (const chunk of resultStream.stream) {
                   const text = chunk.text();
