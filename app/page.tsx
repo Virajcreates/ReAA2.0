@@ -43,7 +43,7 @@ export default function ChatPage() {
   });
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Collapsible Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -58,7 +58,7 @@ export default function ChatPage() {
       />
 
       {/* Main Workspace Container */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden bg-slate-50/50 dark:bg-slate-950/50">
         {/* Top Header */}
         <Header
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
@@ -75,8 +75,8 @@ export default function ChatPage() {
           />
         </main>
 
-        {/* Input Bar */}
-        <footer className="w-full bg-gradient-to-t from-zinc-50 via-zinc-50/90 to-transparent dark:from-zinc-950 dark:via-zinc-950/90 pt-2">
+        {/* Floating Input Bar */}
+        <footer className="w-full bg-gradient-to-t from-slate-50 via-slate-50/90 to-transparent dark:from-slate-950 dark:via-slate-950/90 backdrop-blur-xl pt-2 border-t border-slate-200/40 dark:border-slate-800/40">
           <ChatInput
             onSendMessage={sendMessage}
             onStop={stopGeneration}

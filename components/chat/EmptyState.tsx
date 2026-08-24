@@ -5,7 +5,6 @@ import {
   Scale,
   Gavel,
   FileText,
-  Building2,
   Sparkles,
   ArrowRight,
   ShieldCheck,
@@ -24,10 +23,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Statutory Act & Rules',
       subtitle: 'RERA Act 2016 & Karnataka Rules 2017',
       icon: Scale,
-      color: 'border-blue-500/20 bg-blue-50/40 dark:bg-blue-950/20 hover:border-blue-500/50',
-      iconColor: 'text-blue-500 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40',
+      color: 'border-blue-500/30 bg-slate-900/80 hover:border-blue-500/60 shadow-lg shadow-blue-950/20',
+      iconColor: 'text-blue-400 bg-blue-500/15 border border-blue-500/30',
       badgeText: 'Pinecone: rera-legal',
-      badgeClass: 'bg-blue-100/80 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+      badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
       prompts: [
         'What are the builder obligations for structural defects under Section 14(3)?',
         'Explain the 70% separate escrow account rule under Section 4(2)(l)(D).',
@@ -39,10 +38,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Tribunal & Court Rulings',
       subtitle: 'Supreme Court & High Court Precedents',
       icon: Gavel,
-      color: 'border-purple-500/20 bg-purple-50/40 dark:bg-purple-950/20 hover:border-purple-500/50',
-      iconColor: 'text-purple-500 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/40',
+      color: 'border-purple-500/30 bg-slate-900/80 hover:border-purple-500/60 shadow-lg shadow-purple-950/20',
+      iconColor: 'text-purple-400 bg-purple-500/15 border border-purple-500/30',
       badgeText: 'Pinecone: rera-litigation',
-      badgeClass: 'bg-purple-100/80 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+      badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
       prompts: [
         'What did the Supreme Court rule in Newtech Promoters regarding ongoing projects and Form M refunds?',
         'Can a builder enforce one-sided delay penalty clauses according to Pioneer Urban v. Govindan Raghavan?',
@@ -54,10 +53,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Complaints & Adjudication',
       subtitle: 'Form M / Form N & Interest Calculation',
       icon: FileText,
-      color: 'border-indigo-500/20 bg-indigo-50/40 dark:bg-indigo-950/20 hover:border-indigo-500/50',
-      iconColor: 'text-indigo-500 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40',
+      color: 'border-indigo-500/30 bg-slate-900/80 hover:border-indigo-500/60 shadow-lg shadow-indigo-950/20',
+      iconColor: 'text-indigo-400 bg-indigo-500/15 border border-indigo-500/30',
       badgeText: 'Pinecone: rera-complaints',
-      badgeClass: 'bg-indigo-100/80 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+      badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
       prompts: [
         'How do I calculate delayed possession interest using SBI MCLR + 2% per annum under Karnataka Rule 18?',
         'What is the procedural difference between filing Form M (Authority) and Form N (Adjudicating Officer)?',
@@ -69,10 +68,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Statistical Queries & Documents',
       subtitle: 'PostgreSQL Text-to-SQL & Document Vector Store',
       icon: BarChart3,
-      color: 'border-amber-500/20 bg-amber-50/40 dark:bg-amber-950/20 hover:border-amber-500/50',
-      iconColor: 'text-amber-500 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40',
+      color: 'border-amber-500/30 bg-slate-900/80 hover:border-amber-500/60 shadow-lg shadow-amber-950/20',
+      iconColor: 'text-amber-400 bg-amber-500/15 border border-amber-500/30',
       badgeText: 'Supabase SQL + Astra DB',
-      badgeClass: 'bg-amber-100/80 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
       prompts: [
         'What are the top 5 districts with the highest number of registered K-RERA projects?',
         'List the promoters with the highest number of registered ongoing projects in Bengaluru.',
@@ -84,20 +83,20 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-6 md:py-10 flex flex-col items-center justify-center space-y-6 md:space-y-8 animate-fade-in">
       {/* Hero Badge & Title */}
-      <div className="text-center space-y-3 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-200 dark:bg-zinc-800/90 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold shadow-2xs">
-          <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
+      <div className="text-center space-y-3.5 max-w-2xl">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold shadow-glow backdrop-blur-xs">
+          <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
           <span>Tri-Database Hybrid Agentic RAG Engine</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-tight">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight">
           Authoritative Legal Advisory for{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-600 to-zinc-400 dark:from-white dark:via-zinc-200 dark:to-zinc-400">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">
             Karnataka Real Estate
           </span>
         </h1>
 
-        <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl mx-auto">
+        <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xl mx-auto">
           Multi-store AI agent integrating dense Pinecone vector search, DataStax Astra DB document retrieval, and Supabase PostgreSQL Text-to-SQL across 9,800+ K-RERA projects.
         </p>
       </div>
@@ -109,7 +108,7 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
           return (
             <div
               key={cat.id}
-              className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 backdrop-blur-xs ${cat.color} space-y-3 shadow-2xs hover:shadow-xs`}
+              className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 backdrop-blur-sm ${cat.color} space-y-3 shadow-md hover:shadow-xl`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -117,10 +116,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <h2 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                    <h2 className="text-xs sm:text-sm font-bold text-slate-100">
                       {cat.title}
                     </h2>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    <p className="text-[11px] text-slate-400">
                       {cat.subtitle}
                     </p>
                   </div>
@@ -137,10 +136,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
                   <button
                     key={i}
                     onClick={() => onSelectPrompt(prompt)}
-                    className="w-full text-left p-2.5 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white bg-white/70 dark:bg-zinc-900/60 hover:bg-white dark:hover:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-800 transition-all flex items-center justify-between group cursor-pointer shadow-2xs"
+                    className="w-full text-left p-2.5 rounded-xl text-xs text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-750/70 hover:border-indigo-500/40 transition-all flex items-center justify-between group cursor-pointer shadow-2xs"
                   >
                     <span className="line-clamp-2 leading-relaxed pr-2">{prompt}</span>
-                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all text-zinc-800 dark:text-zinc-200 flex-shrink-0" />
+                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all text-indigo-400 flex-shrink-0" />
                   </button>
                 ))}
               </div>
@@ -150,19 +149,19 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       </div>
 
       {/* Trust & Tri-Store Architecture Banner */}
-      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-[11px] text-zinc-500 dark:text-zinc-400 pt-1">
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-[11px] text-slate-400 pt-1">
         <div className="flex items-center gap-1.5">
-          <Database className="w-3.5 h-3.5 text-zinc-400" />
+          <Database className="w-3.5 h-3.5 text-indigo-400" />
           <span>Pinecone + Astra DB + Supabase SQL</span>
         </div>
-        <span className="hidden sm:inline text-zinc-300 dark:text-zinc-700">•</span>
+        <span className="hidden sm:inline text-slate-700">•</span>
         <div className="flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
+          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
           <span>Strict Verbatim Grounding</span>
         </div>
-        <span className="hidden sm:inline text-zinc-300 dark:text-zinc-700">•</span>
+        <span className="hidden sm:inline text-slate-700">•</span>
         <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
           <span>Gemini Agentic Function Calling</span>
         </div>
       </div>
