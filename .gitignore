@@ -1,0 +1,54 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Environment variables and secrets
+.env
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# Next.js Build Outputs
+/.next/
+/out/
+/build
+/dist
+
+# TypeScript & Build caches
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# Debug & Execution Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Large Datasets & CSV Files
+*.csv
+krera_project_documents_final.csv
+temp_astra_ingestion/*.csv
+temp_ingestion/*.csv
+
+# Python Virtual Environments (Diagnostics)
+temp_diagnostics/venv/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Operating System & IDE Files
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.idea/
+.vscode/
