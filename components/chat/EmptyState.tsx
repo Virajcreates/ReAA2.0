@@ -23,7 +23,7 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Statutory Act & Rules',
       subtitle: 'RERA Act 2016 & Karnataka Rules 2017',
       icon: Scale,
-      color: 'border-blue-500/30 bg-slate-900/80 hover:border-blue-500/60 shadow-lg shadow-blue-950/20',
+      color: 'border-slate-800 bg-slate-900 hover:border-blue-500/50 shadow-md',
       iconColor: 'text-blue-400 bg-blue-500/15 border border-blue-500/30',
       badgeText: 'Pinecone: rera-legal',
       badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
@@ -38,10 +38,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Tribunal & Court Rulings',
       subtitle: 'Supreme Court & High Court Precedents',
       icon: Gavel,
-      color: 'border-purple-500/30 bg-slate-900/80 hover:border-purple-500/60 shadow-lg shadow-purple-950/20',
-      iconColor: 'text-purple-400 bg-purple-500/15 border border-purple-500/30',
+      color: 'border-slate-800 bg-slate-900 hover:border-blue-500/50 shadow-md',
+      iconColor: 'text-blue-400 bg-blue-500/15 border border-blue-500/30',
       badgeText: 'Pinecone: rera-litigation',
-      badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+      badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
       prompts: [
         'What did the Supreme Court rule in Newtech Promoters regarding ongoing projects and Form M refunds?',
         'Can a builder enforce one-sided delay penalty clauses according to Pioneer Urban v. Govindan Raghavan?',
@@ -53,10 +53,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Complaints & Adjudication',
       subtitle: 'Form M / Form N & Interest Calculation',
       icon: FileText,
-      color: 'border-indigo-500/30 bg-slate-900/80 hover:border-indigo-500/60 shadow-lg shadow-indigo-950/20',
-      iconColor: 'text-indigo-400 bg-indigo-500/15 border border-indigo-500/30',
+      color: 'border-slate-800 bg-slate-900 hover:border-blue-500/50 shadow-md',
+      iconColor: 'text-blue-400 bg-blue-500/15 border border-blue-500/30',
       badgeText: 'Pinecone: rera-complaints',
-      badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+      badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
       prompts: [
         'How do I calculate delayed possession interest using SBI MCLR + 2% per annum under Karnataka Rule 18?',
         'What is the procedural difference between filing Form M (Authority) and Form N (Adjudicating Officer)?',
@@ -68,10 +68,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       title: 'Statistical Queries & Documents',
       subtitle: 'PostgreSQL Text-to-SQL & Document Vector Store',
       icon: BarChart3,
-      color: 'border-amber-500/30 bg-slate-900/80 hover:border-amber-500/60 shadow-lg shadow-amber-950/20',
-      iconColor: 'text-amber-400 bg-amber-500/15 border border-amber-500/30',
+      color: 'border-slate-800 bg-slate-900 hover:border-blue-500/50 shadow-md',
+      iconColor: 'text-blue-400 bg-blue-500/15 border border-blue-500/30',
       badgeText: 'Supabase SQL + Astra DB',
-      badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+      badgeClass: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
       prompts: [
         'What are the top 5 districts with the highest number of registered K-RERA projects?',
         'List the promoters with the highest number of registered ongoing projects in Bengaluru.',
@@ -84,14 +84,14 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
     <div className="w-full max-w-4xl mx-auto px-4 py-6 md:py-10 flex flex-col items-center justify-center space-y-6 md:space-y-8 animate-fade-in">
       {/* Hero Badge & Title */}
       <div className="text-center space-y-3.5 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold shadow-glow backdrop-blur-xs">
-          <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-semibold backdrop-blur-xs">
+          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
           <span>Tri-Database Hybrid Agentic RAG Engine</span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight">
           Authoritative Legal Advisory for{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">
+          <span className="text-blue-500">
             Karnataka Real Estate
           </span>
         </h1>
@@ -108,7 +108,7 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
           return (
             <div
               key={cat.id}
-              className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 backdrop-blur-sm ${cat.color} space-y-3 shadow-md hover:shadow-xl`}
+              className={`p-4 sm:p-5 rounded-2xl border transition-all duration-150 ${cat.color} space-y-3`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -136,10 +136,10 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
                   <button
                     key={i}
                     onClick={() => onSelectPrompt(prompt)}
-                    className="w-full text-left p-2.5 rounded-xl text-xs text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-750/70 hover:border-indigo-500/40 transition-all flex items-center justify-between group cursor-pointer shadow-2xs"
+                    className="w-full text-left p-2.5 rounded-xl text-xs text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-750/70 hover:border-blue-500/40 transition-all flex items-center justify-between group cursor-pointer shadow-2xs"
                   >
                     <span className="line-clamp-2 leading-relaxed pr-2">{prompt}</span>
-                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all text-indigo-400 flex-shrink-0" />
+                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all text-blue-400 flex-shrink-0" />
                   </button>
                 ))}
               </div>
@@ -151,17 +151,17 @@ export function EmptyState({ onSelectPrompt }: EmptyStateProps) {
       {/* Trust & Tri-Store Architecture Banner */}
       <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-[11px] text-slate-400 pt-1">
         <div className="flex items-center gap-1.5">
-          <Database className="w-3.5 h-3.5 text-indigo-400" />
+          <Database className="w-3.5 h-3.5 text-blue-400" />
           <span>Pinecone + Astra DB + Supabase SQL</span>
         </div>
         <span className="hidden sm:inline text-slate-700">•</span>
         <div className="flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+          <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
           <span>Strict Verbatim Grounding</span>
         </div>
         <span className="hidden sm:inline text-slate-700">•</span>
         <div className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
           <span>Gemini Agentic Function Calling</span>
         </div>
       </div>

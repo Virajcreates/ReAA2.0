@@ -9,7 +9,7 @@
     --border: #e2e8f0;
     --card: #ffffff;
     --card-foreground: #0f172a;
-    --primary: #4f46e5;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
     --sidebar-bg: #f1f5f9;
     --sidebar-border: #e2e8f0;
@@ -17,16 +17,16 @@
   }
 
   .dark {
-    --background: #0b0f17;
+    --background: #0b0f19;
     --foreground: #f8fafc;
     --border: #1e293b;
     --card: #0f172a;
     --card-foreground: #f8fafc;
-    --primary: #6366f1;
+    --primary: #2563eb;
     --primary-foreground: #ffffff;
     --sidebar-bg: #090d16;
     --sidebar-border: #1e293b;
-    --sidebar-hover: #172033;
+    --sidebar-hover: #141c2e;
   }
 }
 
@@ -39,7 +39,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Elegant Slim Scrollbars */
+/* Slim Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -50,13 +50,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(148, 163, 184, 0.2);
   border-radius: 9999px;
   transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
+  background: rgba(148, 163, 184, 0.4);
 }
 
 /* Hide scrollbars for clean chip rows */
@@ -70,7 +70,7 @@ body {
 
 /* Text Selection */
 ::selection {
-  background-color: rgba(99, 102, 241, 0.3);
+  background-color: rgba(37, 99, 235, 0.35);
   color: inherit;
 }
 

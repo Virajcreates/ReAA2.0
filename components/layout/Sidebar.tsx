@@ -101,15 +101,15 @@ export function Sidebar({
       )}
 
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 w-72 md:w-80 flex flex-col bg-slate-950/95 border-r border-slate-800/80 transition-transform duration-300 ease-in-out backdrop-blur-xl ${
+        className={`fixed md:static inset-y-0 left-0 z-40 w-72 md:w-80 flex flex-col bg-[#0b0f19] border-r border-slate-800 transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         {/* Top Header & New Consultation CTA */}
-        <div className="p-3.5 sm:p-4 border-b border-slate-800/80 space-y-2.5">
+        <div className="p-3.5 sm:p-4 border-b border-slate-800 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-glow">
+              <div className="w-5 h-5 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
                 <Scale className="w-3 h-3" />
               </div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
@@ -132,7 +132,7 @@ export function Sidebar({
               onNewConsultation();
               if (window.innerWidth < 768) onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold shadow-glow transition-all duration-200 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-all duration-150 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Consultation</span>
@@ -146,7 +146,7 @@ export function Sidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search consultations..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-750 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/60 focus:border-indigo-500/60"
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-750 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/60 focus:border-blue-500/60"
             />
           </div>
         </div>
@@ -177,7 +177,7 @@ export function Sidebar({
                       }}
                       className={`group relative flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-150 text-xs ${
                         isActive
-                          ? 'bg-indigo-500/15 text-indigo-200 font-medium border border-indigo-500/30 shadow-2xs'
+                          ? 'bg-blue-600/20 text-blue-200 font-medium border border-blue-500/50'
                           : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850/80 border border-transparent'
                       }`}
                     >
@@ -185,7 +185,7 @@ export function Sidebar({
                       <div className="flex items-center gap-2 min-w-0 flex-1 mr-1.5">
                         <MessageSquare
                           className={`w-3.5 h-3.5 flex-shrink-0 ${
-                            isActive ? 'text-indigo-400' : 'text-slate-500'
+                            isActive ? 'text-blue-400' : 'text-slate-500'
                           }`}
                         />
 
@@ -200,7 +200,7 @@ export function Sidebar({
                               if (e.key === 'Escape') setEditingId(null);
                             }}
                             autoFocus
-                            className="w-full bg-slate-800 text-xs px-1.5 py-0.5 rounded border border-indigo-500 text-white focus:outline-none"
+                            className="w-full bg-slate-800 text-xs px-1.5 py-0.5 rounded border border-blue-500 text-white focus:outline-none"
                           />
                         ) : (
                           <span className="truncate">{conv.title}</span>
@@ -213,7 +213,7 @@ export function Sidebar({
                           <>
                             <button
                               onClick={(e) => handleSaveRename(conv.id, e)}
-                              className="p-1 text-indigo-400 hover:text-indigo-300 cursor-pointer"
+                              className="p-1 text-blue-400 hover:text-blue-300 cursor-pointer"
                               title="Save title"
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -260,20 +260,20 @@ export function Sidebar({
         </div>
 
         {/* Footer: Tri-Database Engine Status & Clear History */}
-        <div className="p-3.5 border-t border-slate-800/80 space-y-2.5 bg-slate-900/60">
+        <div className="p-3.5 border-t border-slate-800 space-y-2.5 bg-slate-900/60">
           <div className="space-y-1">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-              <Server className="w-3 h-3 text-indigo-400" />
+              <Server className="w-3 h-3 text-blue-500" />
               <span>Storage Engines Connected (3)</span>
             </span>
             <div className="grid grid-cols-3 gap-1 text-[9px] font-mono">
               <span className="px-1.5 py-0.5 rounded border text-center truncate bg-blue-500/10 text-blue-300 border-blue-500/30">
                 Pinecone
               </span>
-              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-cyan-500/10 text-cyan-300 border-cyan-500/30">
+              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-sky-500/10 text-sky-300 border-sky-500/30">
                 Astra DB
               </span>
-              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-indigo-500/10 text-indigo-300 border-indigo-500/30">
+              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-blue-600/15 text-blue-300 border-blue-600/30">
                 Supabase
               </span>
             </div>

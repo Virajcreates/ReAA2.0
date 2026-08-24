@@ -62,8 +62,8 @@ export function ChatInput({
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 pb-3 sm:pb-5">
       {/* Quick Suggestions Chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-1.5 no-scrollbar">
-        <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap flex items-center gap-1 mr-1">
-          <Sparkles className="w-3 h-3 text-indigo-400" />
+        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap flex items-center gap-1 mr-1">
+          <Sparkles className="w-3 h-3 text-blue-500" />
           <span>Quick Inquiries:</span>
         </span>
         {quickTags.map((tag, idx) => (
@@ -71,7 +71,7 @@ export function ChatInput({
             key={idx}
             onClick={() => onSendMessage(tag.prompt)}
             disabled={isBusy}
-            className="text-[11px] px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-750 dark:border-slate-800 transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
+            className="text-[11px] px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-750 transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs"
           >
             {tag.label}
           </button>
@@ -79,11 +79,11 @@ export function ChatInput({
       </div>
 
       {/* Input Card Container */}
-      <div className="relative rounded-2xl bg-slate-900/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-700/70 dark:border-slate-800 shadow-xl shadow-black/40 focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-indigo-500/60 transition-all duration-200">
+      <div className="relative rounded-2xl bg-slate-900/90 backdrop-blur-xl border border-slate-700/70 shadow-xl shadow-black/40 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:border-blue-500/60 transition-all duration-200">
         {/* Status Indicator Pill if actively streaming */}
         {isStreaming && statusText && (
-          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-indigo-950/60 border-b border-indigo-900/40 rounded-t-2xl text-[11px] text-indigo-300 backdrop-blur-xs">
-            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-blue-950/60 border-b border-blue-900/40 rounded-t-2xl text-[11px] text-blue-300 backdrop-blur-xs">
+            <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
             <span className="font-medium truncate">{statusText}</span>
           </div>
         )}
@@ -110,7 +110,7 @@ export function ChatInput({
               <button
                 type="button"
                 onClick={onStop}
-                className="p-2 sm:p-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white transition-all shadow-md shadow-red-500/30 cursor-pointer"
+                className="p-2 sm:p-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white transition-all shadow-sm cursor-pointer"
                 title="Stop response generation"
               >
                 <Square className="w-4 h-4 fill-current" />
@@ -120,7 +120,7 @@ export function ChatInput({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!input.trim() || isBusy}
-                className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-white transition-all duration-200 shadow-glow disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
+                className="p-2 sm:p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all duration-150 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
                 title="Send inquiry"
               >
                 <Send className="w-4 h-4" />
@@ -131,7 +131,7 @@ export function ChatInput({
       </div>
 
       {/* Footer Disclaimer */}
-      <p className="text-[10px] text-center text-slate-500 dark:text-slate-400 mt-2">
+      <p className="text-[10px] text-center text-slate-400 mt-2">
         ReAA 2.0 synthesizes the RERA Act 2016 and K-RERA public disclosures. Output is for research purposes and does not constitute formal legal counsel.
       </p>
     </div>

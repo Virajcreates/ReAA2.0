@@ -13,8 +13,6 @@ import {
   Server,
   FileCode2,
 } from 'lucide-react';
-import { RERA_NAMESPACES, ReraNamespace } from '@/types/rera';
-import { getNamespaceBadgeClasses } from '@/lib/utils';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -27,7 +25,7 @@ export function Header({ onToggleSidebar, onNewConsultation, isSidebarOpen }: He
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex items-center justify-between h-14 md:h-16 px-3.5 md:px-6 bg-slate-950/85 backdrop-blur-xl border-b border-slate-800/80 transition-colors">
+      <header className="sticky top-0 z-30 flex items-center justify-between h-14 md:h-16 px-3.5 md:px-6 bg-[#0b0f19]/85 backdrop-blur-xl border-b border-slate-800/80 transition-colors">
         {/* Left Side: Sidebar Toggle & Brand */}
         <div className="flex items-center gap-2.5 sm:gap-3.5">
           <button
@@ -39,7 +37,7 @@ export function Header({ onToggleSidebar, onNewConsultation, isSidebarOpen }: He
           </button>
 
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 flex items-center justify-center text-white shadow-glow ring-1 ring-indigo-400/40">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
               <Scale className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div>
@@ -47,7 +45,7 @@ export function Header({ onToggleSidebar, onNewConsultation, isSidebarOpen }: He
                 <span className="font-bold text-xs sm:text-sm md:text-base text-slate-100 tracking-tight">
                   ReAA 2.0
                 </span>
-                <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 py-0.2 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-mono">
+                <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 font-mono">
                   K-RERA
                 </span>
               </div>
@@ -63,25 +61,25 @@ export function Header({ onToggleSidebar, onNewConsultation, isSidebarOpen }: He
           {/* Tri-Database Architecture Modal Trigger */}
           <button
             onClick={() => setShowArchitectureInfo(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-850 text-slate-300 border border-slate-750 hover:border-indigo-500/40 text-xs font-medium transition-all cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-850 text-slate-300 border border-slate-750 hover:border-blue-500/40 text-xs font-medium transition-all cursor-pointer shadow-2xs"
             title="View Tri-Database Architecture (Pinecone + Astra DB + Supabase)"
           >
-            <Database className="w-3.5 h-3.5 text-indigo-400" />
+            <Database className="w-3.5 h-3.5 text-blue-400" />
             <span className="hidden md:inline">Tri-Database Router</span>
             <span className="md:hidden text-[11px]">Architecture</span>
             <Info className="w-3 h-3 text-slate-400 hidden sm:inline" />
           </button>
 
           {/* Model Pill */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-purple-500/10 text-purple-300 border border-purple-500/30 text-xs font-medium">
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-500/10 text-blue-300 border border-blue-500/30 text-xs font-medium">
+            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
             <span>Gemini Flash</span>
           </div>
 
           {/* New Consultation CTA */}
           <button
             onClick={onNewConsultation}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold shadow-glow transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-all duration-150 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">New Consultation</span>
@@ -96,12 +94,12 @@ export function Header({ onToggleSidebar, onNewConsultation, isSidebarOpen }: He
           onClick={() => setShowArchitectureInfo(false)}
         >
           <div
-            className="w-full max-w-2xl bg-slate-900/95 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto rounded-2xl backdrop-blur-xl"
+            className="w-full max-w-2xl bg-slate-900 border border-slate-800 shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
+                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/30">
                   <Database className="w-5 h-5" />
                 </div>
                 <div>
@@ -136,38 +134,38 @@ export function Header({ onToggleSidebar, onNewConsultation, isSidebarOpen }: He
               </div>
 
               {/* Store 2: DataStax Astra DB */}
-              <div className="p-3.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 space-y-2">
+              <div className="p-3.5 rounded-xl border border-sky-500/30 bg-sky-500/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-cyan-400" />
+                    <Cpu className="w-4 h-4 text-sky-400" />
                     <span className="text-xs font-bold text-slate-100">
                       2. DataStax Astra DB (Direct Document Links Store)
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-semibold border border-sky-500/30">
                     rera_links
                   </span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Retrieves official government PDFs, sanction plans, commencement certificates (CC), and occupancy certificates (OC) from collection <code className="text-cyan-300">rera_links</code>.
+                  Retrieves official government PDFs, sanction plans, commencement certificates (CC), and occupancy certificates (OC) from collection <code className="text-sky-300">rera_links</code>.
                 </p>
               </div>
 
               {/* Store 3: Supabase PostgreSQL */}
-              <div className="p-3.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 space-y-2">
+              <div className="p-3.5 rounded-xl border border-blue-500/30 bg-blue-500/10 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileCode2 className="w-4 h-4 text-indigo-400" />
+                    <FileCode2 className="w-4 h-4 text-blue-400" />
                     <span className="text-xs font-bold text-slate-100">
                       3. Supabase PostgreSQL (Text-to-SQL Relational Engine)
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30">
                     execute_sql RPC
                   </span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Executes agentic SQL queries via tool <code className="text-indigo-300">query_krera_sql_database</code> for global statistical aggregations and rankings across 9,800+ projects and 69,000+ complaints.
+                  Executes agentic SQL queries via tool <code className="text-blue-300">query_krera_sql_database</code> for global statistical aggregations and rankings across 9,800+ projects and 69,000+ complaints.
                 </p>
               </div>
             </div>
@@ -177,7 +175,7 @@ export function Header({ onToggleSidebar, onNewConsultation, isSidebarOpen }: He
                 href="https://rera.karnataka.gov.in"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 hover:underline font-medium"
+                className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 hover:underline font-medium"
               >
                 <span>Official K-RERA Portal</span>
                 <ExternalLink className="w-3 h-3" />
