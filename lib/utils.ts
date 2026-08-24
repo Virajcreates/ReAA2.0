@@ -66,11 +66,18 @@ export function getNamespaceBadgeClasses(namespace: ReraNamespace): {
         border: 'border-amber-200 dark:border-amber-800/60',
         dot: 'bg-amber-500',
       };
+    case 'rera-links':
+      return {
+        bg: 'bg-cyan-50 dark:bg-cyan-950/40',
+        text: 'text-cyan-700 dark:text-cyan-300',
+        border: 'border-cyan-200 dark:border-cyan-800/60',
+        dot: 'bg-cyan-500',
+      };
     default:
       return {
-        bg: 'bg-zinc-50 dark:bg-zinc-800',
+        bg: 'bg-zinc-50 dark:bg-zinc-800/60',
         text: 'text-zinc-700 dark:text-zinc-300',
-        border: 'border-zinc-200 dark:border-zinc-700',
+        border: 'border-zinc-200 dark:border-zinc-700/60',
         dot: 'bg-zinc-500',
       };
   }
