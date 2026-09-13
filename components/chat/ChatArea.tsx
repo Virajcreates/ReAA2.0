@@ -8,28 +8,48 @@ import { ReraNamespace } from '@/types/rera';
 
 interface ChatAreaProps {
   messages: Message[];
-  onSendMessage: (message: string, namespaces?: ReraNamespace[]) => void;
+  onSendMessage: (message: string, namespaces?: ReraNamespace[], language?: string) => void;
   isStreaming: boolean;
 }
 
-export function ChatArea({ messages, onSendMessage, isStreaming }: ChatAreaProps) {
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+export const ChatArea = React.memo(function ChatArea({
+  messages,
+  onSendMessage,
+  isStreaming,
+}: ChatAreaProps) {
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto-scroll to bottom on messages change
+  // Smooth Auto-Scrolling anchored to the bottom ref on message stream updates
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!messagesEndRef.current) return;
+
+    // Use requestAnimationFrame to coordinate smooth scrolling with the browser's paint cycle
+    const animId = requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end',
+      });
+    });
+
+    return () => cancelAnimationFrame(animId);
   }, [messages, isStreaming]);
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 overflow-y-auto flex items-center justify-center p-4">
+      <div
+        className="flex-1 overflow-y-auto [overflow-anchor:auto] flex items-center justify-center p-4 transition-all duration-300 ease-out"
+        style={{ overflowAnchor: 'auto' }}
+      >
         <EmptyState onSelectPrompt={(prompt) => onSendMessage(prompt)} />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto divide-y divide-transparent">
+    <div
+      className="flex-1 overflow-y-auto [overflow-anchor:auto] divide-y divide-transparent scroll-smooth transition-all duration-300 ease-out"
+      style={{ overflowAnchor: 'auto' }}
+    >
       {messages.map((message, index) => (
         <MessageItem
           key={message.id || index}
@@ -44,7 +64,8 @@ export function ChatArea({ messages, onSendMessage, isStreaming }: ChatAreaProps
           }
         />
       ))}
-      <div ref={bottomRef} className="h-4" />
+      {/* Scroll anchoring target ref at the bottom */}
+      <div ref={messagesEndRef} className="h-4 w-full flex-shrink-0" />
     </div>
   );
-}
+});

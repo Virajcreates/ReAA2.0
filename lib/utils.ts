@@ -39,45 +39,28 @@ export function getNamespaceBadgeClasses(namespace: ReraNamespace): {
 } {
   switch (namespace) {
     case 'rera-legal':
-      return {
-        bg: 'bg-blue-500/10 dark:bg-blue-500/15',
-        text: 'text-blue-700 dark:text-blue-300',
-        border: 'border-blue-500/30 dark:border-blue-500/40',
-        dot: 'bg-blue-500',
-      };
     case 'rera-litigation':
-      return {
-        bg: 'bg-purple-500/10 dark:bg-purple-500/15',
-        text: 'text-purple-700 dark:text-purple-300',
-        border: 'border-purple-500/30 dark:border-purple-500/40',
-        dot: 'bg-purple-500',
-      };
     case 'rera-complaints':
-      return {
-        bg: 'bg-indigo-500/10 dark:bg-indigo-500/15',
-        text: 'text-indigo-700 dark:text-indigo-300',
-        border: 'border-indigo-500/30 dark:border-indigo-500/40',
-        dot: 'bg-indigo-500',
-      };
     case 'rera-projects':
-      return {
-        bg: 'bg-amber-500/10 dark:bg-amber-500/15',
-        text: 'text-amber-700 dark:text-amber-300',
-        border: 'border-amber-500/30 dark:border-amber-500/40',
-        dot: 'bg-amber-500',
-      };
     case 'rera-links':
       return {
-        bg: 'bg-cyan-500/10 dark:bg-cyan-500/15',
-        text: 'text-cyan-700 dark:text-cyan-300',
-        border: 'border-cyan-500/30 dark:border-cyan-500/40',
-        dot: 'bg-cyan-500',
+        bg: 'bg-white/5',
+        text: 'text-white',
+        border: 'border-white/12',
+        dot: 'bg-white',
+      };
+    case 'supabase-sql':
+      return {
+        bg: 'bg-white/10',
+        text: 'text-white',
+        border: 'border-white/20',
+        dot: 'bg-white',
       };
     default:
       return {
-        bg: 'bg-zinc-500/10 dark:bg-zinc-800/60',
-        text: 'text-zinc-700 dark:text-zinc-300',
-        border: 'border-zinc-500/20 dark:border-zinc-700/60',
+        bg: 'bg-white/5',
+        text: 'text-zinc-300',
+        border: 'border-white/10',
         dot: 'bg-zinc-400',
       };
   }

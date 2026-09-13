@@ -52,7 +52,7 @@ export function useStreamingChat({
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string, selectedNamespaces?: ReraNamespace[]) => {
+    async (content: string, selectedNamespaces?: ReraNamespace[], language: string = 'en-IN') => {
       const cleanContent = content.trim();
       if (!cleanContent) return;
 
@@ -117,6 +117,7 @@ export function useStreamingChat({
             messages: historyForApi,
             conversationId: convId,
             namespaces: selectedNamespaces,
+            language: language || 'en-IN',
           }),
           signal: abortController.signal,
         });

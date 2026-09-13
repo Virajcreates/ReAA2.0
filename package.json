@@ -12,6 +12,7 @@
     "@datastax/astra-db-ts": "^2.3.0",
     "@google/generative-ai": "^0.21.0",
     "@pinecone-database/pinecone": "^3.0.3",
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.112.3",
     "clsx": "^2.1.1",
     "csv-parser": "^3.2.1",

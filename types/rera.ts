@@ -3,7 +3,8 @@ export type ReraNamespace =
   | 'rera-projects'
   | 'rera-complaints'
   | 'rera-legal'
-  | 'rera-links';
+  | 'rera-links'
+  | 'supabase-sql';
 
 export interface NamespaceInfo {
   id: ReraNamespace;
@@ -66,6 +67,16 @@ export const RERA_NAMESPACES: Record<ReraNamespace, NamespaceInfo> = {
     bgColor: 'bg-cyan-500/10 dark:bg-cyan-500/15',
     borderColor: 'border-cyan-500/30 dark:border-cyan-500/40',
     iconName: 'Link',
+  },
+  'supabase-sql': {
+    id: 'supabase-sql',
+    label: 'Supabase Text-to-SQL Analytics',
+    shortLabel: 'Supabase Text-to-SQL',
+    description: 'PostgreSQL relational database queries for aggregate, statistical, and quantitative project analytics',
+    color: 'text-emerald-500 dark:text-emerald-400',
+    bgColor: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+    borderColor: 'border-emerald-500/30 dark:border-emerald-500/40',
+    iconName: 'Database',
   },
 };
 

@@ -44,4 +44,5 @@ export interface ChatRequestPayload {
   }>;
   conversationId?: string;
   namespaces?: ReraNamespace[];
+  language?: string;
 }

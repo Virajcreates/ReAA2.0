@@ -1,4 +1,4 @@
-# ReAA 2.0: Hybrid Agentic RAG Engine for K-RERA
+# REAA: Hybrid Agentic RAG Engine for K-RERA
 
 [![Next.js](https://img.shields.io/badge/Next.js-14.2.15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
@@ -12,9 +12,9 @@
 
 ## 📌 Overview
 
-**ReAA 2.0 (Real Estate Advisory Agent)** is a domain-specialized, autonomous AI advisory engine engineered for the **Karnataka Real Estate Regulatory Authority (K-RERA)** ecosystem. 
+**REAA (Real Estate Advisory Agent)** is a domain-specialized, autonomous AI advisory engine engineered for the **Karnataka Real Estate Regulatory Authority (K-RERA)** ecosystem. 
 
-By combining **dense vector retrieval** with **relational Text-to-SQL function calling**, ReAA 2.0 bridges statutory legal grounding with quantitative intelligence across:
+By combining **dense vector retrieval** with **relational Text-to-SQL function calling**, REAA bridges statutory legal grounding with quantitative intelligence across:
 - **9,800+** Registered K-RERA Projects
 - **52,500+** Consumer & Promoter Complaints
 - **16,500+** Land & Project Litigations
@@ -25,7 +25,7 @@ By combining **dense vector retrieval** with **relational Text-to-SQL function c
 
 ## 🏗️ System Architecture: The Tri-Database Router
 
-ReAA 2.0 employs an intelligent query-classification and function-calling router powered by **Google Gemini** that dynamically distributes queries across three dedicated database engines based on query intent:
+REAA employs an intelligent query-classification and function-calling router powered by **Google Gemini** that dynamically distributes queries across three dedicated database engines based on query intent:
 
 ```mermaid
 flowchart TD
@@ -171,7 +171,7 @@ Open [http://localhost:3005](http://localhost:3005) (or [http://localhost:3000](
 
 ## 🧪 Testing & Diagnostics
 
-ReAA 2.0 includes standalone test runners to validate vector and relational queries independently:
+REAA includes standalone test runners to validate vector and relational queries independently:
 
 ```bash
 # Test multi-store hybrid vector retrieval (Pinecone + Astra DB)
@@ -184,7 +184,7 @@ npx tsx tests/test_sql_agent.ts
 ---
 
 ## 📜 Legal Disclaimer
-*ReAA 2.0 is an AI advisory research tool built to assist homebuyers, legal professionals, and real estate researchers in navigating Karnataka Real Estate Regulatory Authority public disclosures, provisions, and judicial precedents. Output generated does not constitute binding formal legal counsel.*
+*REAA is an AI advisory research tool built to assist homebuyers, legal professionals, and real estate researchers in navigating Karnataka Real Estate Regulatory Authority public disclosures, provisions, and judicial precedents. Output generated does not constitute binding formal legal counsel.*
 
 ---
 

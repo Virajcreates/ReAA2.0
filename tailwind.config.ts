@@ -15,43 +15,44 @@ const config: Config = {
         border: "var(--border)",
         card: "var(--card)",
         "card-foreground": "var(--card-foreground)",
-        slate: {
-          750: "#243044",
-          850: "#141c2e",
-          950: "#0b0f19",
-        },
+        // Pure Black & White Minimalist Design Tokens
+        "bg-deep": "#000000",
+        hairline: "rgba(255, 255, 255, 0.12)",
+        panel: "#000000",
+        "panel-raised": "rgba(255, 255, 255, 0.05)",
+        "silver-1": "#ffffff",
+        "silver-2": "#ffffff",
+        "silver-3": "#a1a1aa",
+        "silver-4": "#71717a",
+        steel: "#ffffff",
+        "steel-dim": "rgba(255, 255, 255, 0.2)",
+        verified: "#ffffff",
         sidebar: {
-          DEFAULT: "var(--sidebar-bg)",
-          border: "var(--sidebar-border)",
-          hover: "var(--sidebar-hover)",
-        },
-        rera: {
-          litigation: "#3b82f6",
-          projects: "#f59e0b",
-          complaints: "#2563eb",
-          legal: "#1d4ed8",
-          links: "#0284c7",
-          sql: "#0369a1",
+          DEFAULT: "#000000",
+          border: "rgba(255, 255, 255, 0.12)",
+          hover: "rgba(255, 255, 255, 0.08)",
         },
       },
       fontFamily: {
         sans: [
+          "var(--font-sans)",
           "Inter",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",
           "Roboto",
-          "Helvetica Neue",
+          "sans-serif",
+        ],
+        display: [
+          "var(--font-display)",
+          "Space Grotesk",
           "sans-serif",
         ],
         mono: [
+          "var(--font-mono)",
+          "IBM Plex Mono",
           "JetBrains Mono",
-          "Fira Code",
           "ui-monospace",
-          "SFMono-Regular",
-          "Menlo",
-          "Monaco",
-          "Consolas",
           "monospace",
         ],
       },
@@ -60,6 +61,11 @@ const config: Config = {
         "slide-up": "slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
         "pulse-subtle": "pulseSubtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "pulse-glow": "pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "stroke-draw": "strokeDraw 10s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+        "stroke-draw-fast": "strokeDraw 8s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+        "stroke-draw-slow": "strokeDraw 12s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+        "blueprint-pulse": "blueprintPulse 4s ease-in-out infinite",
+        "crane-sway": "craneSway 8s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -77,6 +83,35 @@ const config: Config = {
         pulseGlow: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
+        },
+        strokeDraw: {
+          "0%": {
+            strokeDashoffset: "1200",
+            opacity: "0",
+          },
+          "10%": {
+            opacity: "1",
+          },
+          "70%": {
+            strokeDashoffset: "0",
+            opacity: "1",
+          },
+          "88%": {
+            strokeDashoffset: "0",
+            opacity: "1",
+          },
+          "100%": {
+            strokeDashoffset: "0",
+            opacity: "0",
+          },
+        },
+        blueprintPulse: {
+          "0%, 100%": { opacity: "0.15" },
+          "50%": { opacity: "0.5" },
+        },
+        craneSway: {
+          "0%, 100%": { transform: "rotate(0deg)" },
+          "50%": { transform: "rotate(1.2deg)" },
         },
       },
       boxShadow: {

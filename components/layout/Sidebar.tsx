@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Conversation } from '@/types/chat';
 import {
   Plus,
@@ -11,9 +11,13 @@ import {
   X,
   Search,
   Scale,
-  ChevronLeft,
+  PanelLeftClose,
   Server,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,9 +29,10 @@ interface SidebarProps {
   onDeleteConversation: (id: string) => void;
   onClearAll: () => void;
   onRenameConversation: (id: string, newTitle: string) => void;
+  user?: User | null;
 }
 
-export function Sidebar({
+export const Sidebar = React.memo(function Sidebar({
   isOpen,
   onClose,
   conversations,
@@ -37,10 +42,44 @@ export function Sidebar({
   onDeleteConversation,
   onClearAll,
   onRenameConversation,
+  user,
 }: SidebarProps) {
+  const [currentUser, setCurrentUser] = useState<User | null>(user || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+
+  useEffect(() => {
+    if (user !== undefined) {
+      setCurrentUser(user);
+      return;
+    }
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user || null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user]);
+
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      window.location.href = '/login';
+    } catch (e) {
+      console.error('Sign out error:', e);
+      window.location.href = '/login';
+    }
+  };
 
   // Group conversations by date
   const groupedConversations = useMemo(() => {
@@ -60,240 +99,302 @@ export function Sidebar({
       { label: 'Older Consultations', items: [] },
     ];
 
-    for (const conv of filtered) {
-      const time = conv.updatedAt || conv.createdAt;
-      if (time >= today) {
+    filtered.forEach((conv) => {
+      const updatedAt = conv.updatedAt || conv.createdAt;
+      if (updatedAt >= today) {
         groups[0].items.push(conv);
-      } else if (time >= yesterday) {
+      } else if (updatedAt >= yesterday) {
         groups[1].items.push(conv);
-      } else if (time >= pastWeek) {
+      } else if (updatedAt >= pastWeek) {
         groups[2].items.push(conv);
       } else {
         groups[3].items.push(conv);
       }
-    }
+    });
 
     return groups.filter((g) => g.items.length > 0);
   }, [conversations, searchQuery]);
 
-  const handleStartRename = (conv: Conversation, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingId(conv.id);
-    setEditTitle(conv.title);
-  };
-
-  const handleSaveRename = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (editTitle.trim()) {
-      onRenameConversation(id, editTitle.trim());
-    }
-    setEditingId(null);
-  };
-
   return (
     <>
-      {/* Mobile Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden animate-fade-in"
-          onClick={onClose}
-        />
-      )}
-
-      <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 w-72 md:w-80 flex flex-col bg-[#0b0f19] border-r border-slate-800 transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      {/* Mobile Backdrop Overlay when sidebar is open */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-xs md:hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Main Sidebar Panel */}
+      <aside
+        className={`fixed md:static inset-y-0 left-0 z-50 flex flex-col h-screen bg-black border-r border-white/10 transition-all duration-300 ease-in-out ${
+          isOpen
+            ? 'w-72 sm:w-80 translate-x-0 opacity-100 shadow-2xl md:shadow-none'
+            : '-translate-x-full md:translate-x-0 md:w-0 md:border-r-0 md:opacity-0 md:overflow-hidden pointer-events-none'
+        }`}
+        aria-label="Consultations sidebar"
       >
-        {/* Top Header & New Consultation CTA */}
-        <div className="p-3.5 sm:p-4 border-b border-slate-800 space-y-2.5">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col h-full w-72 sm:w-80">
+          {/* Header & Brand */}
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b border-white/10">
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
-                <Scale className="w-3 h-3" />
-              </div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300">
+              <Scale className="w-5 h-5 text-white" />
+              <span className="font-display font-bold text-sm sm:text-base tracking-wider text-white uppercase">
                 Consultations
               </span>
             </div>
-
-            {/* Mobile close button */}
+            {/* Retract / Collapse button inside sidebar */}
             <button
               onClick={onClose}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-200 md:hidden cursor-pointer"
+              className="p-1.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              title="Collapse sidebar"
+              aria-label="Collapse sidebar"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <PanelLeftClose className="w-4 h-4" />
             </button>
           </div>
 
-          {/* New Consultation Button */}
-          <button
-            onClick={() => {
-              onNewConsultation();
-              if (window.innerWidth < 768) onClose();
-            }}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-all duration-150 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Consultation</span>
-          </button>
-
-          {/* Search Input */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search consultations..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-slate-900 border border-slate-750 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/60 focus:border-blue-500/60"
-            />
-          </div>
-        </div>
-
-        {/* Conversation List */}
-        <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-3">
-          {groupedConversations.length === 0 ? (
-            <div className="text-center py-8 text-xs text-slate-500">
-              {searchQuery ? 'No matching consultations found.' : 'No consultation history yet.'}
-            </div>
-          ) : (
-            groupedConversations.map((group) => (
-              <div key={group.label} className="space-y-1">
-                <div className="px-2 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                  {group.label}
-                </div>
-
-                {group.items.map((conv) => {
-                  const isActive = conv.id === activeConversationId;
-                  const isEditing = editingId === conv.id;
-
-                  return (
-                    <div
-                      key={conv.id}
-                      onClick={() => {
-                        onSelectConversation(conv.id);
-                        if (window.innerWidth < 768) onClose();
-                      }}
-                      className={`group relative flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all duration-150 text-xs ${
-                        isActive
-                          ? 'bg-blue-600/20 text-blue-200 font-medium border border-blue-500/50'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850/80 border border-transparent'
-                      }`}
-                    >
-                      {/* Icon + Title */}
-                      <div className="flex items-center gap-2 min-w-0 flex-1 mr-1.5">
-                        <MessageSquare
-                          className={`w-3.5 h-3.5 flex-shrink-0 ${
-                            isActive ? 'text-blue-400' : 'text-slate-500'
-                          }`}
-                        />
-
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveRename(conv.id, e as any);
-                              if (e.key === 'Escape') setEditingId(null);
-                            }}
-                            autoFocus
-                            className="w-full bg-slate-800 text-xs px-1.5 py-0.5 rounded border border-blue-500 text-white focus:outline-none"
-                          />
-                        ) : (
-                          <span className="truncate">{conv.title}</span>
-                        )}
-                      </div>
-
-                      {/* Rename / Delete Actions */}
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isEditing ? (
-                          <>
-                            <button
-                              onClick={(e) => handleSaveRename(conv.id, e)}
-                              className="p-1 text-blue-400 hover:text-blue-300 cursor-pointer"
-                              title="Save title"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingId(null);
-                              }}
-                              className="p-1 text-slate-400 hover:text-slate-200 cursor-pointer"
-                              title="Cancel"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={(e) => handleStartRename(conv, e)}
-                              className="p-1 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
-                              title="Rename consultation"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteConversation(conv.id);
-                              }}
-                              className="p-1 text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
-                              title="Delete consultation"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Footer: Tri-Database Engine Status & Clear History */}
-        <div className="p-3.5 border-t border-slate-800 space-y-2.5 bg-slate-900/60">
-          <div className="space-y-1">
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-              <Server className="w-3 h-3 text-blue-500" />
-              <span>Storage Engines Connected (3)</span>
-            </span>
-            <div className="grid grid-cols-3 gap-1 text-[9px] font-mono">
-              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-blue-500/10 text-blue-300 border-blue-500/30">
-                Pinecone
-              </span>
-              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-sky-500/10 text-sky-300 border-sky-500/30">
-                Astra DB
-              </span>
-              <span className="px-1.5 py-0.5 rounded border text-center truncate bg-blue-600/15 text-blue-300 border-blue-600/30">
-                Supabase
-              </span>
-            </div>
-          </div>
-
-          {conversations.length > 0 && (
+          {/* New Consultation CTA Button */}
+          <div className="p-3">
             <button
               onClick={() => {
-                if (window.confirm('Are you sure you want to clear all consultation history?')) {
-                  onClearAll();
-                }
+                onNewConsultation();
+                if (window.innerWidth < 768) onClose();
               }}
-              className="w-full flex items-center justify-center gap-1.5 py-1 text-[11px] text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-white hover:bg-zinc-200 text-black text-xs sm:text-sm font-semibold transition-colors cursor-pointer active:scale-[0.98]"
             >
-              <Trash2 className="w-3 h-3" />
-              <span>Clear History</span>
+              <Plus className="w-4 h-4" />
+              <span>New Consultation</span>
             </button>
-          )}
+          </div>
+
+          {/* Search Filter Bar */}
+          <div className="px-3 pb-2">
+            <div className="relative flex items-center">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="w-3.5 h-3.5 text-zinc-500" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search consultations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-8 py-2 bg-white/5 rounded-xl text-xs text-white placeholder:text-zinc-500 border border-white/10 focus:outline-none focus:border-white/30 transition-colors font-sans"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 text-zinc-500 hover:text-white p-0.5"
+                  title="Clear search"
+                  aria-label="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Conversations List */}
+          <div className="flex-1 overflow-y-auto px-2 py-1 space-y-4 no-scrollbar">
+            {groupedConversations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                <MessageSquare className="w-8 h-8 text-zinc-600 mb-2" />
+                <p className="text-xs text-zinc-500 font-sans">
+                  {searchQuery ? 'No matching consultations found.' : 'No consultation history yet.'}
+                </p>
+              </div>
+            ) : (
+              groupedConversations.map((group) => (
+                <div key={group.label} className="space-y-1">
+                  <span className="px-2 text-[10px] font-mono font-semibold tracking-wider text-zinc-500 uppercase">
+                    {group.label}
+                  </span>
+                  <div className="space-y-0.5">
+                    {group.items.map((conv) => {
+                      const isActive = conv.id === activeConversationId;
+                      const isEditing = editingId === conv.id;
+
+                      return (
+                        <div
+                          key={conv.id}
+                          className={`group relative flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs transition-all cursor-pointer font-sans ${
+                            isActive
+                              ? 'bg-white/10 text-white font-medium border border-white/15'
+                              : 'text-zinc-400 hover:bg-white/5 hover:text-white border border-transparent'
+                          }`}
+                          onClick={() => {
+                            if (!isEditing) {
+                              onSelectConversation(conv.id);
+                              if (window.innerWidth < 768) onClose();
+                            }
+                          }}
+                        >
+                          <MessageSquare className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-white' : 'text-zinc-500'}`} />
+
+                          {isEditing ? (
+                            <div
+                              className="flex-1 flex items-center gap-1 min-w-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="text"
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    if (editTitle.trim()) {
+                                      onRenameConversation(conv.id, editTitle.trim());
+                                    }
+                                    setEditingId(null);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingId(null);
+                                  }
+                                }}
+                                className="flex-1 min-w-0 bg-black px-2 py-0.5 rounded-lg text-xs text-white border border-white/30 focus:outline-none font-sans"
+                              />
+                              <button
+                                onClick={() => {
+                                  if (editTitle.trim()) {
+                                    onRenameConversation(conv.id, editTitle.trim());
+                                  }
+                                  setEditingId(null);
+                                }}
+                                className="text-white hover:opacity-80 p-0.5"
+                              >
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="text-zinc-500 hover:text-zinc-300 p-0.5"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="flex-1 truncate select-none text-left">
+                                {conv.title}
+                              </span>
+
+                              {/* Action Buttons on Hover */}
+                              <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-opacity">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingId(conv.id);
+                                    setEditTitle(conv.title);
+                                  }}
+                                  className="p-1 text-zinc-500 hover:text-white rounded-lg hover:bg-white/10"
+                                  title="Rename"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteConversation(conv.id);
+                                  }}
+                                  className="p-1 text-zinc-500 hover:text-red-400 rounded-lg hover:bg-white/10"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer Metadata & Storage Status */}
+          <div className="p-3 border-t border-white/10 space-y-3 bg-black">
+            {/* Logged-in User Profile Section */}
+            {currentUser && (
+              <div className="p-2.5 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  {currentUser.user_metadata?.avatar_url ? (
+                    <img
+                      src={currentUser.user_metadata.avatar_url}
+                      alt={currentUser.user_metadata?.full_name || 'User'}
+                      className="w-8 h-8 rounded-full border border-white/20 object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0 font-display font-semibold text-xs">
+                      {(currentUser.user_metadata?.full_name || currentUser.email || 'U')
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-white truncate leading-tight">
+                      {currentUser.user_metadata?.full_name ||
+                        currentUser.email?.split('@')[0] ||
+                        'Advisor User'}
+                    </p>
+                    <p className="text-[10px] text-zinc-400 truncate font-mono mt-0.5">
+                      {currentUser.email}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+                  title="Sign out"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Storage Engine Badges */}
+            <div className="space-y-1">
+              <span className="text-[9px] font-mono font-semibold uppercase tracking-wider text-zinc-500 flex items-center gap-1">
+                <Server className="w-2.5 h-2.5 text-zinc-500" />
+                <span>Storage Engines Connected (3)</span>
+              </span>
+              <div className="grid grid-cols-3 gap-1">
+                <div className="text-[10px] text-center font-mono py-1 rounded-lg bg-white/5 border border-white/10 text-zinc-400 font-medium">
+                  Pinecone
+                </div>
+                <div className="text-[10px] text-center font-mono py-1 rounded-lg bg-white/5 border border-white/10 text-zinc-400 font-medium">
+                  Astra DB
+                </div>
+                <div className="text-[10px] text-center font-mono py-1 rounded-lg bg-white/5 border border-white/10 text-zinc-400 font-medium">
+                  Supabase
+                </div>
+              </div>
+            </div>
+
+            {/* Clear All Sessions */}
+            {conversations.length > 0 && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to clear all consultation history?')) {
+                    onClearAll();
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-1.5 py-1 text-[11px] text-zinc-500 hover:text-red-400 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Clear History</span>
+              </button>
+            )}
+          </div>
         </div>
       </aside>
     </>
   );
-}
+});

@@ -1,8 +1,28 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter, Space_Grotesk, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'ReAA 2.0 | Legal & Relational Advisory AI for K-RERA',
+  title: 'REAA | Legal & Relational Advisory AI for K-RERA',
   description:
     'Authoritative hybrid vector and relational Text-to-SQL AI advisor for Karnataka Real Estate Regulatory Authority (K-RERA), RERA Act 2016, and Karnataka RERA Rules 2017.',
   keywords: [
@@ -16,7 +36,7 @@ export const metadata: Metadata = {
     'Karnataka RERA Rules 2017',
     'Bangalore Real Estate Legal Advice',
   ],
-  authors: [{ name: 'ReAA Advisory System' }],
+  authors: [{ name: 'REAA Advisory System' }],
   icons: {
     icon: '/favicon.ico',
   },
@@ -34,8 +54,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="antialiased min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col selection:bg-blue-600/35 selection:text-white">
+    <html lang="en" className={`dark ${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}>
+      <body className="antialiased min-h-screen bg-black text-white font-sans flex flex-col selection:bg-white selection:text-black">
         {children}
       </body>
     </html>

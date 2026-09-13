@@ -4,42 +4,63 @@
 
 @layer base {
   :root {
-    --background: #f8fafc;
-    --foreground: #0f172a;
-    --border: #e2e8f0;
-    --card: #ffffff;
-    --card-foreground: #0f172a;
-    --primary: #2563eb;
-    --primary-foreground: #ffffff;
-    --sidebar-bg: #f1f5f9;
-    --sidebar-border: #e2e8f0;
-    --sidebar-hover: #e2e8f0;
+    --bg-deep: #000000;
+    --background: #000000;
+    --foreground: #ffffff;
+    --hairline: rgba(255, 255, 255, 0.12);
+    --border: rgba(255, 255, 255, 0.12);
+    --card: #000000;
+    --card-foreground: #ffffff;
+    --primary: #ffffff;
+    --primary-foreground: #000000;
+    --sidebar-bg: #000000;
+    --sidebar-border: rgba(255, 255, 255, 0.12);
+    --sidebar-hover: rgba(255, 255, 255, 0.08);
   }
 
   .dark {
-    --background: #0b0f19;
-    --foreground: #f8fafc;
-    --border: #1e293b;
-    --card: #0f172a;
-    --card-foreground: #f8fafc;
-    --primary: #2563eb;
-    --primary-foreground: #ffffff;
-    --sidebar-bg: #090d16;
-    --sidebar-border: #1e293b;
-    --sidebar-hover: #141c2e;
+    --bg-deep: #000000;
+    --background: #000000;
+    --foreground: #ffffff;
+    --hairline: rgba(255, 255, 255, 0.12);
+    --border: rgba(255, 255, 255, 0.12);
+    --card: #000000;
+    --card-foreground: #ffffff;
+    --primary: #ffffff;
+    --primary-foreground: #000000;
+    --sidebar-bg: #000000;
+    --sidebar-border: rgba(255, 255, 255, 0.12);
+    --sidebar-hover: rgba(255, 255, 255, 0.08);
   }
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #ffffff;
+  background-color: #000000;
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Slim Scrollbars */
+@layer components {
+  /* Minimalist Pure B&W Pill Button */
+  .btn-pill {
+    background-color: #ffffff;
+    color: #000000;
+    font-weight: 600;
+    border-radius: 9999px;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .btn-pill:hover {
+    background-color: #e4e4e7;
+  }
+  .btn-pill:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Precision Hairline Slim Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -50,13 +71,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 9999px;
   transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(255, 255, 255, 0.35);
 }
 
 /* Hide scrollbars for clean chip rows */
@@ -68,10 +89,10 @@ body {
   scrollbar-width: none;
 }
 
-/* Text Selection */
+/* Stark B&W Selection Invert */
 ::selection {
-  background-color: rgba(37, 99, 235, 0.35);
-  color: inherit;
+  background-color: #ffffff;
+  color: #000000;
 }
 
 /* Markdown Table Resets & Enhancements */
@@ -93,7 +114,7 @@ body {
     transform: scale(1);
   }
   50% {
-    opacity: 0.7;
+    opacity: 0.65;
     transform: scale(0.98);
   }
 }
@@ -101,3 +122,33 @@ body {
 .animate-tool-pulse {
   animation: toolPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Architectural Blueprint Wireframe Animation */
+@keyframes strokeDraw {
+  0% {
+    stroke-dashoffset: 1200;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  70% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  88% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+.animate-stroke-draw {
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  animation: strokeDraw 10s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+

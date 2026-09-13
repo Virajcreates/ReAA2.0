@@ -3,6 +3,7 @@ import { queryPineconeNamespace } from '@/lib/pinecone';
 import { getAstraLinksCollection } from '@/lib/astra/client';
 import { generateEmbedding } from './embeddings';
 import { QUERY_ROUTING_SYSTEM_PROMPT } from './prompts';
+import { normalizeVernacularQuery, AGGREGATION_KEYWORDS } from './lexicon';
 import { CitationItem, QueryRouteAnalysis, RAGRetrievalResult, ReraNamespace } from '@/types/rera';
 
 // Curated comprehensive K-RERA knowledge items for grounding & resilient fallback
@@ -188,7 +189,28 @@ const LITIGATION_KEYWORDS = [
   'tribunal',
   'reat',
   'high court',
-  'supreme court'
+  'supreme court',
+  // Statutory Kannada / K-RERA Gazette
+  'ಮೂಲ ದಾವೆ',
+  'ದಾವೆ',
+  'ತಡೆಯಾಜ್ಞೆ',
+  'ಮಧ್ಯಂತರ ತಡೆಯಾಜ್ಞೆ',
+  'ನ್ಯಾಯಾಲಯ',
+  'ಕೋರ್ಟ್',
+  'ಸಿವಿಲ್ ಕೋರ್ಟ್',
+  'ಹೈಕೋರ್ಟ್',
+  'ಸ್ಥಗಿತ ಆದೇಶ',
+  'ಹಕ್ಕು ವಿವಾದ',
+  'ಪಾಲು ದಾವೆ',
+  // Statutory Hindi / RERA
+  'मूल वाद',
+  'वाद',
+  'मुकदमा',
+  'अंतरिम व्यादेश',
+  'स्थगन आदेश',
+  'न्यायालय',
+  'सिविल कोर्ट',
+  'शीर्षक विवाद'
 ];
 
 const COMPLAINT_KEYWORDS = [
@@ -202,7 +224,35 @@ const COMPLAINT_KEYWORDS = [
   'form n',
   'adjudicating officer',
   'recovery warrant',
-  'adjudication'
+  'adjudication',
+  // Statutory Kannada / K-RERA Gazette
+  'ದೂರು',
+  'ದೂರುಗಳು',
+  'ನಮೂನೆ ಎಂ',
+  'ನಮೂನೆ ಎನ್',
+  'ಫಾರ್ಮ್ ಎಂ',
+  'ಫಾರ್ಮ್ ಎನ್',
+  'ತೀರ್ಪುಗಾರ ಅಧಿಕಾರಿ',
+  'ವಿಳಂಬ ಬಡ್ಡಿ',
+  'ವಿಳಂಬ ಪರಿಹಾರ',
+  'ಹಣ ವಾಪಸಾತಿ',
+  'ವಸೂಲಾತಿ ವಾರೆಂಟ್',
+  'ಸೆಕ್ಷನ್ 18',
+  'ವಿಭಾಗ 18',
+  'ಸೆಕ್ಷನ್ 71',
+  'ವಿಭಾಗ 71',
+  // Statutory Hindi / RERA
+  'शिकायत',
+  'शिकायतें',
+  'फॉर्म एम',
+  'फॉर्म एन',
+  'न्यायनिर्णायक अधिकारी',
+  'विलंब ब्याज',
+  'विलंब मुआवजा',
+  'रिफंड',
+  'वसूली वारंट',
+  'धारा 18',
+  'धारा 71'
 ];
 
 const PROJECT_KEYWORDS = [
@@ -221,7 +271,31 @@ const PROJECT_KEYWORDS = [
   'escrow bank',
   'possession date',
   'launch date',
-  'registered project'
+  'registered project',
+  // Statutory Kannada
+  'ಯೋಜನೆ',
+  'ಪ್ರಾಜೆಕ್ಟ್',
+  'ನೋಂದಣಿ',
+  'ಅನುಮೋದನೆ',
+  'ಪ್ರವರ್ತಕ',
+  'ಡೆವಲಪರ್',
+  'ಪೂರ್ಣಗೊಳ್ಳುವ ದಿನಾಂಕ',
+  'ಫ್ಲಾಟ್',
+  'ಟವರ್',
+  'ನಿವೇಶನ',
+  'ಖಾಲಿ ನಿವೇಶನ',
+  'ಯೋಜನೆ ಸ್ಥಿತಿ',
+  // Statutory Hindi
+  'परियोजना',
+  'प्रोजेक्ट',
+  'पंजीकरण',
+  'अनुमोदन',
+  'प्रवर्तक',
+  'डेवलपर',
+  'पूर्णता तिथि',
+  'भूखंड',
+  'खाली भूखंड',
+  'परियोजना स्थिति'
 ];
 
 const LEGAL_KEYWORDS = [
@@ -237,7 +311,30 @@ const LEGAL_KEYWORDS = [
   'escrow requirement',
   'defect liability',
   '5 year warranty',
-  '5 years structural'
+  '5 years structural',
+  // Statutory Kannada
+  'ಕಾಯ್ದೆ',
+  'ನಿಯಮ',
+  'ನಿಯಮಾವಳಿ',
+  'ಎಸ್ಕ್ರೋ',
+  'ರಚನಾತ್ಮಕ ದೋಷ',
+  'ಕಾರ್ಪೆಟ್ ವಿಸ್ತೀರ್ಣ',
+  'ಮುಂಗಡ ಹಣ',
+  '10% ಮಿತಿ',
+  'ಅಧಿಸೂಚನೆ',
+  'ಸರ್ಕ್ಯುಲರ್',
+  'ಅಧಿನಿಯಮ',
+  // Statutory Hindi
+  'अधिनियम',
+  'नियम',
+  'नियम 18',
+  'एस्क्रो खाता',
+  '70 प्रतिशत',
+  'संरचनात्मक दोष',
+  'कारपेट क्षेत्र',
+  'अग्रिम भुगतान',
+  'अधिसूचना',
+  'परिपत्र'
 ];
 
 const DOCUMENT_KEYWORDS = [
@@ -257,7 +354,24 @@ const DOCUMENT_KEYWORDS = [
   'approvals',
   'sanctioned plan',
   'cc certificate',
-  'oc certificate'
+  'oc certificate',
+  // Statutory Kannada
+  'ದಾಖಲೆ',
+  'ಲಿಂಕ್',
+  'ಪಿಡಿಎಫ್',
+  'ಡೌನ್‌ಲೋಡ್',
+  'ಪ್ರಮಾಣಪತ್ರ',
+  'ಸ್ವಾಧೀನಾನುಭವ ಪ್ರಮಾಣಪತ್ರ',
+  'ಪೂರ್ಣಗೊಳಿಸುವಿಕೆ ಪ್ರಮಾಣಪತ್ರ',
+  'ಋಣಭಾರ ಪ್ರಮಾಣಪತ್ರ',
+  'ಕ್ರಯಪತ್ರ',
+  // Statutory Hindi
+  'दस्तावेज़',
+  'डाउनलोड',
+  'अधिभोग प्रमाण पत्र',
+  'पूर्णता प्रमाण पत्र',
+  'भार प्रमाणपत्र',
+  'विक्रय विलेख'
 ];
 
 function containsAnyKeyword(text: string, keywords: string[]): boolean {
@@ -265,7 +379,7 @@ function containsAnyKeyword(text: string, keywords: string[]): boolean {
     if (kw.length <= 3) {
       return new RegExp(`\\b${kw}\\b`, 'i').test(text);
     }
-    return text.includes(kw);
+    return text.includes(kw.toLowerCase());
   });
 }
 
@@ -299,7 +413,54 @@ export async function analyzeQueryAndRoute(query: string): Promise<QueryRouteAna
     };
   }
 
-  // 2. Intent-Based Keyword Namespace Locking (Priority 2)
+  // 2. Statistical Aggregation / Quantitative Intent (Supabase Text-to-SQL)
+  const vernacularNorm = normalizeVernacularQuery(query);
+  const hasAggregation = containsAnyKeyword(q, AGGREGATION_KEYWORDS) || vernacularNorm.hasAggregation;
+
+  if (hasAggregation) {
+    const hasLitigation = containsAnyKeyword(q, LITIGATION_KEYWORDS) || vernacularNorm.matchedNamespaces.includes('rera-litigation');
+    const hasComplaint = containsAnyKeyword(q, COMPLAINT_KEYWORDS) || vernacularNorm.matchedNamespaces.includes('rera-complaints');
+    const targetNamespaces: ReraNamespace[] = ['supabase-sql'];
+    if (hasComplaint) {
+      targetNamespaces.push('rera-complaints');
+    } else if (hasLitigation) {
+      targetNamespaces.push('rera-litigation');
+    } else {
+      targetNamespaces.push('rera-projects');
+    }
+
+    const concepts = ['Supabase Text-to-SQL', 'Statistical Aggregation', 'Relational Database Execution'];
+    if (vernacularNorm.keyConcepts.length > 0) {
+      concepts.push(...vernacularNorm.keyConcepts);
+    }
+
+    const langLabel = vernacularNorm.detectedLanguage === 'kn-IN' ? ' in Kannada' : vernacularNorm.detectedLanguage === 'hi-IN' ? ' in Hindi' : '';
+    return {
+      targetNamespaces,
+      reasoning: `Statistical aggregation / quantitative intent detected${langLabel}. Explicitly routed to Supabase Text-to-SQL engine for PostgreSQL relational execution.`,
+      keyLegalConcepts: concepts,
+    };
+  }
+
+  // 3. Preprocess Vernacular Inputs (Kannada / Hindi) into Normalized Legal Intents
+  if (vernacularNorm.isVernacular && vernacularNorm.matchedNamespaces.length > 0) {
+    const langLabel = vernacularNorm.detectedLanguage === 'kn-IN' ? 'Kannada (K-RERA Gazette)' : 'Hindi (RERA Statutory)';
+    if (vernacularNorm.matchedNamespaces.length === 1) {
+      const targetNs = vernacularNorm.matchedNamespaces[0];
+      return {
+        targetNamespaces: [targetNs],
+        reasoning: `Vernacular statutory query normalized in ${langLabel}. Target locked strictly to [${targetNs}].`,
+        keyLegalConcepts: vernacularNorm.keyConcepts,
+      };
+    }
+    return {
+      targetNamespaces: vernacularNorm.matchedNamespaces,
+      reasoning: `Vernacular statutory multi-intent normalized in ${langLabel}. Routed to [${vernacularNorm.matchedNamespaces.join(', ')}].`,
+      keyLegalConcepts: vernacularNorm.keyConcepts,
+    };
+  }
+
+  // 3. Intent-Based Keyword Namespace Locking (Priority 3)
   const hasLitigation = containsAnyKeyword(q, LITIGATION_KEYWORDS);
   const hasComplaint = containsAnyKeyword(q, COMPLAINT_KEYWORDS);
   const hasProject = containsAnyKeyword(q, PROJECT_KEYWORDS);
@@ -404,7 +565,7 @@ export async function analyzeQueryAndRoute(query: string): Promise<QueryRouteAna
 
       if (parsed && Array.isArray(parsed.targetNamespaces) && parsed.targetNamespaces.length > 0) {
         const validNamespaces: ReraNamespace[] = parsed.targetNamespaces.filter((ns: string) =>
-          ['rera-legal', 'rera-litigation', 'rera-complaints', 'rera-projects', 'rera-links'].includes(ns)
+          ['rera-legal', 'rera-litigation', 'rera-complaints', 'rera-projects', 'rera-links', 'supabase-sql'].includes(ns)
         );
 
         if (validNamespaces.length > 0) {
@@ -434,6 +595,8 @@ const getTopKForNamespace = (namespace: string): number => {
       return 12; // Increased context depth for legal circulars and notifications
     case 'rera-links':
       return 8;  // Dedicated depth for project document links and certificates
+    case 'supabase-sql':
+      return 0;  // Relational database, not a vector store
     case 'rera-complaints':
     case 'rera-litigation':
     case 'rera-projects':
@@ -487,20 +650,24 @@ export async function executeRAGRetrieval(
 ): Promise<RAGRetrievalResult> {
   // 1. Analyze query intent and check for exact identifier regex
   const routing = await analyzeQueryAndRoute(query);
+  const vernacularNorm = normalizeVernacularQuery(query);
+
   const selectedNamespaces = targetNamespacesOverride && targetNamespacesOverride.length > 0
     ? targetNamespacesOverride
     : routing.targetNamespaces;
 
   const queryFilter = routing.queryFilter;
 
-  // Split target namespaces between Pinecone and Astra DB
-  const pineconeNamespaces = selectedNamespaces.filter((ns) => ns !== 'rera-links');
+  // Split target namespaces between Pinecone, Astra DB, and Supabase
+  const pineconeNamespaces = selectedNamespaces.filter((ns) => ns !== 'rera-links' && ns !== 'supabase-sql');
   const queryAstra = selectedNamespaces.includes('rera-links');
 
   // 2. Generate vector embedding using gemini-embedding-001 (3072 dims)
+  // For vernacular queries, use normalizedQuery with concept expansion to maximize cosine similarity
+  const queryForEmbedding = vernacularNorm.isVernacular ? vernacularNorm.normalizedQuery : query;
   let queryVector: number[] = [];
   try {
-    queryVector = await generateEmbedding(query);
+    queryVector = await generateEmbedding(queryForEmbedding);
   } catch (embedError) {
     console.warn('Embedding generation error in RAG retrieval:', embedError);
   }
@@ -791,7 +958,11 @@ function retrieveFromKnowledgeBase(
   limit = 4
 ): Array<KnowledgeDocument & { score: number }> {
   const queryLower = query.toLowerCase();
-  const queryWords = queryLower.split(/\s+/).filter((w) => w.length > 2);
+  const vernacularNorm = normalizeVernacularQuery(query);
+  const queryWords = (queryLower + ' ' + (vernacularNorm.isVernacular ? vernacularNorm.extractedLegalTerms.join(' ') : ''))
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
 
   const scoredDocs = KRERA_KNOWLEDGE_BASE
     .filter((doc) => namespaces.includes(doc.namespace))
@@ -804,6 +975,13 @@ function retrieveFromKnowledgeBase(
       for (const kw of doc.keywords) {
         if (queryLower.includes(kw.toLowerCase())) {
           score += 0.25;
+        }
+        if (vernacularNorm.isVernacular) {
+          for (const term of vernacularNorm.extractedLegalTerms) {
+            if (kw.toLowerCase().includes(term.toLowerCase()) || term.toLowerCase().includes(kw.toLowerCase())) {
+              score += 0.3;
+            }
+          }
         }
       }
 
