@@ -1,194 +1,83 @@
-# REAA: Hybrid Agentic RAG Engine for K-RERA
+# REAA
+**Karnataka Real Estate Regulatory Authority Advisory Intelligence**
 
-[![Next.js](https://img.shields.io/badge/Next.js-14.2.15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-Flash-orange?style=for-the-badge&logo=google)](https://aistudio.google.com/)
-[![Pinecone](https://img.shields.io/badge/Pinecone-Vector%20DB-green?style=for-the-badge&logo=pinecone)](https://www.pinecone.io/)
-[![DataStax Astra DB](https://img.shields.io/badge/DataStax-Astra%20DB-purple?style=for-the-badge&logo=apachecassandra)](https://astra.datastax.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20SQL-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS%203.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+REAA is a premium, AI-driven legal and statistical advisory platform built to navigate and analyze the Karnataka Real Estate Regulatory Authority (K-RERA) framework. Designed with a strictly monochromatic, high-performance aesthetic, REAA leverages a dual-engine architecture to seamlessly route between semantic legal document retrieval (RAG) and structured PostgreSQL statistical analytics.
 
----
+## Key Features
 
-## 📌 Overview
+* **Dual-Engine Agentic Routing:** Intelligently routes user queries between a vector-based legal document search (for statutory interpretation of the K-RERA Act and Rules) and a Text-to-SQL engine (for data aggregation and project statistics).
+* **Multimodal PDF Analysis:** Users can upload real estate agreements, statutory clearances, or scanned brochures directly into the chat. The system utilizes Gemini 3.5 Flash to perform native vision-based extraction and analysis of typed text and scanned handwriting across English, Kannada, and Hindi.
+* **Ephemeral Secure Storage:** Uploaded sensitive legal documents are securely handled via Supabase Storage and subjected to an automated 1-hour Time-to-Live (TTL) deletion cycle, ensuring zero long-term data retention liabilities.
+* **Tenant-Isolated Data Architecture:** Powered by Supabase PostgreSQL with strict Row Level Security (RLS) policies, guaranteeing that all `consultations` and `messages` are cryptographically isolated to the authenticated user.
+* **Premium Monochromatic Interface:** Features a minimalist, pure black-and-white (Uber/Grok-inspired) UI, a lightweight cinematic HTML5 video background loop for the authentication flow, and high-contrast electric blue semantic citation pills.
 
-**REAA (Real Estate Advisory Agent)** is a domain-specialized, autonomous AI advisory engine engineered for the **Karnataka Real Estate Regulatory Authority (K-RERA)** ecosystem. 
+## Technology Stack
 
-By combining **dense vector retrieval** with **relational Text-to-SQL function calling**, REAA bridges statutory legal grounding with quantitative intelligence across:
-- **9,800+** Registered K-RERA Projects
-- **52,500+** Consumer & Promoter Complaints
-- **16,500+** Land & Project Litigations
-- **200,000+** Official Project Documents & Downloadable PDF Links (Sanction Plans, NOCs, Occupancy Certificates)
-- Complete statutory statutory corpus of the **Real Estate (Regulation and Development) Act, 2016**, **Karnataka RERA Rules 2017**, and landmark **Supreme Court & High Court Precedents**.
+* **Framework:** Next.js (App Router)
+* **Styling:** Tailwind CSS (Strict B&W with electric blue `text-blue-400` hyperlinks)
+* **Database & Auth:** Supabase (PostgreSQL, Google OAuth, Storage)
+* **AI Engine:** Google Gemini 3.5 Flash (for RAG, SQL generation, and Multimodal Vision)
+* **Background Rendering:** Hardware-accelerated HTML5 `<video>` loops with custom CSS masking and localized branding overlays.
 
----
+## System Architecture
 
-## 🏗️ System Architecture: The Tri-Database Router
+### 1. The RAG Pipeline (Statutory Intelligence)
+When a user asks a legal or procedural question (e.g., "What is the penalty for delayed possession under Section 18?"), the agent queries the embedded K-RERA gazettes, judicial precedents, and regulatory rules. It returns highly accurate, cited answers formatted with interactive blue citation pills that link directly to the source documents.
 
-REAA employs an intelligent query-classification and function-calling router powered by **Google Gemini** that dynamically distributes queries across three dedicated database engines based on query intent:
+### 2. The Text-to-SQL Pipeline (Statistical Analytics)
+When a query requires mathematical aggregation (e.g., "Count the total number of delayed projects in Bengaluru Urban"), the agent translates the natural language into a secure PostgreSQL query, executes it against the RERA database, and formats the output into clean Markdown tables.
 
-```mermaid
-flowchart TD
-    UserQuery["👤 User Natural Language Query"] --> QueryRouter{"🧠 Gemini Intent & Function Router"}
+### 3. The Multimodal Pipeline (Document Verification)
+PDFs uploaded via the chat interface bypass traditional, heavy OCR libraries. The Next.js backend intercepts the file from the `temp_documents` bucket and passes the raw buffer to Gemini 3.5 Flash, which natively reads tables, stamps, and multi-language text to cross-examine developer claims against K-RERA standards.
 
-    %% Tri-Database Routing Branches
-    QueryRouter -->|"1. Semantic & Statutory Intent\n(Act Provisions, Rulings, Case Law)"| PineconeCluster[("🌲 Pinecone Vector DB\n(Namespaces: legal, projects, complaints, litigation)")]
-    QueryRouter -->|"2. Document & Download Intent\n(Brochures, Plans, NOCs, PDFs)"| AstraDBCluster[("⚡ DataStax Astra DB\n(Collection: rera_links)")]
-    QueryRouter -->|"3. Aggregate & Statistical Intent\n(Top Rankings, Cost Sums, Counts)"| SupabaseCluster[("🐘 Supabase PostgreSQL\n(RPC: execute_sql / Text-to-SQL)")]
+## Database Automation (pg_cron)
 
-    %% Execution & Synthesis
-    PineconeCluster --> ContextFusion["🧩 Hybrid Context Fusion & Grounding Engine"]
-    AstraDBCluster --> ContextFusion
-    SupabaseCluster --> ContextFusion
+To maintain absolute data privacy for users uploading sensitive real estate agreements, the Supabase PostgreSQL database is configured with an automated chron job. Every 15 minutes, the database sweeps the `temp_documents` storage bucket and permanently deletes any file older than 1 hour. 
 
-    ContextFusion --> GeminiSynthesis["🤖 Gemini Flash Synthesis Engine\n(Strict Verbatim Grounding & Markdown Formatter)"]
-    GeminiSynthesis --> SSEStream["📡 Server-Sent Events (SSE) Stream to Frontend UI"]
-```
+## Getting Started
 
-### 1. 🌲 Dense Semantic Search (`Pinecone`)
-- **Namespaces**: `rera-legal`, `rera-projects`, `rera-complaints`, `rera-litigation`.
-- **Dimensions**: 3,072-dimensional embeddings via `gemini-embedding-001`.
-- **Role**: Semantic matching across dense legal circulars, project histories, complaint narratives, and court case summaries. Features dynamic top-K context expansion (12 for legal circulars, 5 for structured records).
+### Prerequisites
+* Node.js 18.x or later
+* A Supabase project (Database, Auth, and Storage)
+* A Google Gemini API Key with access to `gemini-3.5-flash`
 
-### 2. ⚡ Direct Document & PDF Retrieval (`DataStax Astra DB`)
-- **Collection**: `rera_links` (Cosine Metric, 3,072 dimensions).
-- **Role**: High-throughput semantic retrieval of official government document links, layout plans, commencement certificates (CC), and occupancy certificates (OC) with zero rate limiting.
+### Installation
 
-### 3. 🐘 Statistical & Aggregate Text-to-SQL (`Supabase PostgreSQL`)
-- **Tables**: `krera_projects`, `krera_complaints`, `krera_litigations`.
-- **Role**: Executed via the `query_krera_sql_database` Gemini tool calling interface. Translates global quantitative queries (*"Top 5 districts with the most projects"*, *"Promoters with >10 complaints"*, *"Total project cost in Bengaluru"*) into optimized SQL `SELECT` statements with in-database aggregation.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-org/reaa.git
+   cd reaa
+   ```
 
----
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## ✨ Key Features
+3. Configure Environment Variables:
+   Create a `.env.local` file in the root directory and add the following keys. Never commit this file to version control.
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   GEMINI_API_KEY=your_gemini_api_key
+   ```
 
-- **Autonomous Tool Calling**: Automatically triggers the Supabase SQL tool for quantitative calculations and switches to vector stores for qualitative legal interpretations.
-- **Strict Verbatim Grounding**: Eliminates hallucinations in regulatory numbers, ministry circulars, and case codes by strictly extracting alphanumeric references directly from retrieved context.
-- **In-Memory Streaming ETL Pipelines**:
-  - `temp_supabase_ingestion/`: High-performance streaming parser with memory-efficient 500-row batching, intra-batch `Map` deduplication, and exponential backoff retry.
-  - `temp_astra_ingestion/`: Smart-batching vectorizer chunking project documents into semantic vector groups of 30.
-- **Clickable Markdown Hyperlinks**: Automatically detects document links in AI responses and renders them with secure, external-tab `<a>` tags with inline icon indicators.
-- **Real-Time SSE Streaming**: Live status indicators displaying query routing decisions, retrieved citations, and token-by-token advisory generation.
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+   The application will be available at `http://localhost:3000`.
 
----
+## Vercel Deployment
 
-## 📂 Project Structure
+This project is optimized for deployment on Vercel.
 
-```bash
-ReAA2.0/
-├── app/
-│   ├── api/chat/route.ts      # Main SSE Chat Streaming Endpoint & Tool Execution
-│   ├── layout.tsx             # Root layout with Tailwind dark mode support
-│   └── page.tsx               # Primary AI Legal Advisory Chat Interface
-├── components/
-│   └── chat/
-│       ├── ChatInterface.tsx  # Main interactive chat UI with state management
-│       ├── MessageItem.tsx    # Markdown renderer with clickable external document links
-│       └── CitationViewer.tsx # Interactive drawer for verified statutory citations
-├── lib/
-│   ├── astra/
-│   │   └── client.ts          # Singleton DataStax Astra DB client
-│   ├── rag/
-│   │   ├── engine.ts          # Multi-Store Hybrid RAG Engine (Pinecone + Astra DB)
-│   │   └── prompts.ts         # Statutory grounding directives & system prompts
-│   ├── gemini.ts              # Google Generative AI client configuration
-│   └── supabase-service.ts    # Supabase PostgreSQL Text-to-SQL execution engine
-├── temp_supabase_ingestion/
-│   └── ingest_sql.ts          # Streaming CSV-to-PostgreSQL batch ingestion engine
-├── temp_astra_ingestion/
-│   └── ingest_astra_links.ts  # Smart-batching CSV-to-Astra DB document vectorizer
-├── .env.example               # Environment variables template
-└── package.json               # Node.js dependencies and scripts
-```
+1. Push your `main` branch to your GitHub repository.
+2. Import the repository into your Vercel dashboard.
+3. Before initiating the build, navigate to Settings > Environment Variables in Vercel and paste your `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `GEMINI_API_KEY`.
+4. Deploy. Vercel will automatically detect the Next.js framework and build the production assets.
 
----
+## Disclaimer
 
-## 🚀 Quick Start & Setup Guide
-
-### 1. Prerequisites
-- **Node.js**: v18.0.0 or higher
-- **npm** or **yarn** / **pnpm**
-
-### 2. Clone the Repository
-```bash
-git clone https://github.com/Virajcreates/ReAA2.0.git
-cd ReAA2.0
-```
-
-### 3. Install Dependencies
-```bash
-npm install
-```
-
-### 4. Configure Environment Variables
-Create a `.env.local` file in the root directory by copying `.env.example`:
-```bash
-cp .env.example .env.local
-```
-
-Fill in your respective API keys:
-```env
-# Google Gemini API
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_CHAT_MODEL=gemini-2.5-flash
-GEMINI_EMBEDDING_MODEL=gemini-embedding-001
-
-# Pinecone Vector DB
-PINECONE_API_KEY=your_pinecone_api_key
-PINECONE_HOST=https://your-pinecone-host.pinecone.io
-PINECONE_INDEX=newreaa
-
-# DataStax Astra DB
-ASTRA_DB_API_ENDPOINT=https://your-astra-db-endpoint.apps.astra.datastax.com
-ASTRA_DB_APPLICATION_TOKEN=AstraCS:your_astra_token
-ASTRA_DB_COLLECTION=rera_links
-
-# Supabase PostgreSQL
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SECRET_KEY=your_supabase_secret_key
-SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
-```
-
-### 5. Run Database Ingestion (Optional)
-To ingest CSV datasets into your databases:
-
-```bash
-# Ingest document links into Astra DB
-npx tsx temp_astra_ingestion/ingest_astra_links.ts --full
-
-# Ingest projects, complaints, and litigations into Supabase
-npx tsx temp_supabase_ingestion/ingest_sql.ts --full
-```
-
-### 6. Start the Development Server
-```bash
-npm run dev
-```
-
-Open [http://localhost:3005](http://localhost:3005) (or [http://localhost:3000](http://localhost:3000)) in your browser.
-
----
-
-## 🧪 Testing & Diagnostics
-
-REAA includes standalone test runners to validate vector and relational queries independently:
-
-```bash
-# Test multi-store hybrid vector retrieval (Pinecone + Astra DB)
-npx tsx tests/test_links_routing.ts
-
-# Test agentic Text-to-SQL execution against Supabase
-npx tsx tests/test_sql_agent.ts
-```
-
----
-
-## 📜 Legal Disclaimer
-*REAA is an AI advisory research tool built to assist homebuyers, legal professionals, and real estate researchers in navigating Karnataka Real Estate Regulatory Authority public disclosures, provisions, and judicial precedents. Output generated does not constitute binding formal legal counsel.*
-
----
-
-## 👨‍💻 Author & Contributions
-- **Created by**: [Virajcreates](https://github.com/Virajcreates)
-- **Repository**: [https://github.com/Virajcreates/ReAA2.0](https://github.com/Virajcreates/ReAA2.0)
-- **License**: MIT
+REAA is an advisory intelligence system designed to interpret K-RERA statutory guidelines and aggregate real estate data. It does not substitute for formal, advocate-client privileged legal counsel. Users should verify critical property decisions and project statuses directly on the official Karnataka Real Estate Regulatory Authority web portal.
