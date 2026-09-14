@@ -4,7 +4,6 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Scale, Shield, AlertCircle } from 'lucide-react';
-import { BuildingWireframe } from '@/components/ui/BuildingWireframe';
 
 function GoogleIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -72,8 +71,15 @@ function LoginForm() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden z-0 bg-black text-white font-sans select-none p-6">
-      {/* Looping Architectural Blueprint Wireframe Animation */}
-      <BuildingWireframe />
+      {/* Cinematic Looping HTML5 Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        src="/Metropolis_constructing_itself_20260913221239.mp4"
+        className="absolute inset-0 w-full h-full object-cover -z-10 opacity-60 pointer-events-none"
+      />
 
       {/* Top Brand Tag */}
       <header className="absolute top-6 left-6 right-6 max-w-5xl mx-auto flex items-center justify-between z-10">
@@ -82,7 +88,7 @@ function LoginForm() {
             <Scale className="w-4 h-4" />
           </div>
           <span className="font-display font-bold tracking-tight text-base text-white">
-            REAA <span className="font-mono text-[10px] text-zinc-400 font-normal ml-1">2.0</span>
+            REAA
           </span>
         </div>
 
@@ -147,10 +153,15 @@ function LoginForm() {
         </div>
       </main>
 
+      {/* Bottom-Right Circular Legal Scales Emblem (Masks Video Watermark) */}
+      <div className="absolute bottom-[85px] right-[65px] z-20 w-14 h-14 rounded-full bg-black/95 border border-white/20 shadow-[0_0_30px_15px_rgba(0,0,0,0.95)] flex items-center justify-center pointer-events-none">
+        <Scale className="w-6 h-6 text-white" />
+      </div>
+
       {/* Footer Statutory Disclaimers */}
       <footer className="absolute bottom-4 left-6 right-6 py-2 text-center z-10 pointer-events-none">
-        <p className="text-[11px] font-mono text-zinc-500 leading-relaxed">
-          REAA 2.0 • Karnataka Real Estate Regulatory Authority Intelligence System • Official Gazette Grounded
+        <p className="text-[11px] font-mono text-zinc-500 leading-relaxed max-w-2xl mx-auto">
+          REAA • Karnataka Real Estate Regulatory Authority Intelligence System • Official Gazette Grounded
         </p>
       </footer>
     </div>

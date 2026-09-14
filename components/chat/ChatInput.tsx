@@ -1,12 +1,17 @@
 'use client';
 
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Send, Square, Sparkles, Mic, MicOff, Languages } from 'lucide-react';
+import { Send, Square, Sparkles, Mic, MicOff, Languages, Paperclip, FileText, X } from 'lucide-react';
 import { ReraNamespace } from '@/types/rera';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 
 interface ChatInputProps {
-  onSendMessage: (message: string, namespaces?: ReraNamespace[], language?: string) => void;
+  onSendMessage: (
+    message: string,
+    namespaces?: ReraNamespace[],
+    language?: string,
+    file?: File | null
+  ) => void;
   onStop: () => void;
   isStreaming: boolean;
   isSubmitting?: boolean;
@@ -22,7 +27,9 @@ export const ChatInput = React.memo(function ChatInput({
 }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [selectedLang, setSelectedLang] = useState('en-IN');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const baseTextRef = useRef('');
 
   const isBusy = isStreaming || isSubmitting;
@@ -57,6 +64,24 @@ export const ChatInput = React.memo(function ChatInput({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        alert('Please upload a PDF document for analysis.');
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // Quick suggestion chips
   const quickTags = [
     { label: 'Top 5 Districts by Projects', prompt: 'What are the top 5 districts with the highest number of registered K-RERA projects?' },
@@ -85,14 +110,21 @@ export const ChatInput = React.memo(function ChatInput({
     if (isListening) {
       stopListening();
     }
-    if (!input.trim() || isBusy) return;
-    const textToSend = input.trim();
+    if ((!input.trim() && !selectedFile) || isBusy) return;
+    const textToSend =
+      input.trim() ||
+      'Please analyze this attached document and provide a comprehensive statutory breakdown of key clauses, dates, parties, and compliance obligations.';
+    const fileToSend = selectedFile;
     setInput('');
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     baseTextRef.current = '';
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-    onSendMessage(textToSend, undefined, selectedLang);
+    onSendMessage(textToSend, undefined, selectedLang, fileToSend);
   };
 
   return (
@@ -106,7 +138,7 @@ export const ChatInput = React.memo(function ChatInput({
         {quickTags.map((tag, idx) => (
           <button
             key={idx}
-            onClick={() => onSendMessage(tag.prompt, undefined, selectedLang)}
+            onClick={() => onSendMessage(tag.prompt, undefined, selectedLang, selectedFile)}
             disabled={isBusy}
             className="text-[11px] px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans"
           >
@@ -114,6 +146,31 @@ export const ChatInput = React.memo(function ChatInput({
           </button>
         ))}
       </div>
+
+      {/* Sleek B&W File Attachment Pill */}
+      {selectedFile && (
+        <div className="flex items-center gap-2 mb-2 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-white/20 text-xs text-white shadow-lg backdrop-blur-md font-mono">
+            <FileText className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            <span className="truncate max-w-[200px] sm:max-w-xs md:max-w-md font-medium text-white">
+              {selectedFile.name}
+            </span>
+            <span className="text-[10px] text-zinc-500 shrink-0">
+              ({(selectedFile.size / 1024).toFixed(0)} KB)
+            </span>
+            <button
+              type="button"
+              onClick={handleClearFile}
+              disabled={isBusy}
+              className="ml-1 p-0.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              title="Remove attached PDF"
+              aria-label="Remove attached PDF"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Input Card Container */}
       <div className={`relative rounded-2xl bg-black/90 backdrop-blur-xl border transition-all duration-200 ${
@@ -176,6 +233,8 @@ export const ChatInput = React.memo(function ChatInput({
                   : selectedLang === 'hi-IN'
                   ? 'हिन्दी में बोलिए... (Listening in Hindi)'
                   : 'Listening to speech input... speak now.'
+                : selectedFile
+                ? `Ask questions about ${selectedFile.name} or press send to analyze...`
                 : selectedLang === 'kn-IN'
                 ? 'K-RERA ಅಥವಾ ರಿಯಲ್ ಎಸ್ಟೇಟ್ ಬಗ್ಗೆ ಕನ್ನಡದಲ್ಲಿ ಕೇಳಿ...'
                 : selectedLang === 'hi-IN'
@@ -185,8 +244,33 @@ export const ChatInput = React.memo(function ChatInput({
             className="flex-1 max-h-44 min-h-[42px] py-2 px-2.5 bg-transparent text-sm md:text-base text-white placeholder:text-zinc-500 focus:outline-none resize-none leading-relaxed disabled:opacity-60 font-sans"
           />
 
-          {/* Action Cluster: Language Selector + Voice Mic + Send / Stop */}
+          {/* Action Cluster: PDF Upload + Language Selector + Voice Mic + Send / Stop */}
           <div className="flex items-center gap-1.5 sm:gap-2 pb-0.5 shrink-0">
+            {/* Hidden PDF File Input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              hidden
+              onChange={handleFileChange}
+            />
+
+            {/* Minimalist B&W Paperclip Upload Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isBusy}
+              className={`p-2 sm:p-2.5 rounded-full transition-all duration-200 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
+                selectedFile
+                  ? 'bg-white/15 text-white border border-white/20 shadow-sm'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/10'
+              }`}
+              title={selectedFile ? `Attached: ${selectedFile.name} (Click to change)` : 'Attach PDF for multimodal analysis (scanned or typed)'}
+              aria-label="Attach PDF"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+
             {/* Compact Language Selector Dropdown */}
             <div className="relative flex items-center">
               <Languages className="w-3.5 h-3.5 text-zinc-400 absolute left-2 pointer-events-none" />
@@ -251,7 +335,7 @@ export const ChatInput = React.memo(function ChatInput({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!input.trim() || isBusy}
+                disabled={(!input.trim() && !selectedFile) || isBusy}
                 className="p-2 sm:p-2.5 rounded-full bg-white hover:bg-zinc-200 text-black transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 title="Send inquiry"
               >

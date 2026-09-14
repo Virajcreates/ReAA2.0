@@ -32,26 +32,26 @@ export function CitationPill({ citation, index }: CitationPillProps) {
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-white/15 bg-white/5 hover:bg-white/10 text-white transition-all cursor-pointer text-left font-sans"
+        className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-blue-400/30 bg-blue-400/5 hover:bg-blue-400/10 text-blue-400 transition-all cursor-pointer text-left font-sans"
         title="Click to view retrieved statutory citation and ruling context"
       >
-        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-white text-black font-mono text-[10px] font-bold">
+        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-400 text-black font-mono text-[10px] font-bold">
           {index + 1}
         </span>
 
-        <span className="flex items-center gap-1 text-white">
+        <span className="flex items-center gap-1 text-blue-400">
           {getNamespaceIcon()}
         </span>
 
-        <span className="max-w-[200px] truncate font-medium text-white">
+        <span className="max-w-[200px] truncate font-medium text-blue-400 group-hover:text-blue-300 transition-colors">
           {citation.section || citation.title}
         </span>
 
-        <span className="text-[10px] text-zinc-400 font-mono">
+        <span className="text-[10px] text-blue-400/70 font-mono">
           {(citation.score * 100).toFixed(0)}%
         </span>
 
-        <ChevronRight className="w-3 h-3 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+        <ChevronRight className="w-3 h-3 text-blue-400/60 group-hover:text-blue-300 group-hover:translate-x-0.5 transition-all" />
       </button>
 
       <CitationModal

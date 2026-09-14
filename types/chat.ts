@@ -13,6 +13,8 @@ export interface Message {
   citations?: CitationItem[];
   status?: StreamStatus;
   error?: string;
+  fileName?: string;
+  fileUrl?: string;
 }
 
 export interface Conversation {
@@ -45,4 +47,6 @@ export interface ChatRequestPayload {
   conversationId?: string;
   namespaces?: ReraNamespace[];
   language?: string;
+  fileUrl?: string;
+  message?: string;
 }

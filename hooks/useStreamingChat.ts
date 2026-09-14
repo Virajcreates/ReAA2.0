@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Message, StreamStatus } from '@/types/chat';
 import { ReraNamespace } from '@/types/rera';
 import { generateId } from '@/lib/utils';
+import { createClient } from '@/utils/supabase/client';
 
 interface UseStreamingChatProps {
   activeConversationId: string | null;
@@ -52,9 +53,14 @@ export function useStreamingChat({
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string, selectedNamespaces?: ReraNamespace[], language: string = 'en-IN') => {
+    async (
+      content: string,
+      selectedNamespaces?: ReraNamespace[],
+      language: string = 'en-IN',
+      file?: File | null
+    ) => {
       const cleanContent = content.trim();
-      if (!cleanContent) return;
+      if (!cleanContent && !file) return;
 
       // Strict lock: Prevent double-execution
       if (isSubmittingRef.current || isStreaming) {
@@ -70,20 +76,90 @@ export function useStreamingChat({
       const convId: string =
         activeIdRef.current ||
         activeConversationId ||
-        createNewConsultation(cleanContent.slice(0, 35) || 'New Consultation', selectedNamespaces).id;
+        createNewConsultation(cleanContent.slice(0, 35) || (file ? `PDF: ${file.name.slice(0, 20)}` : 'New Consultation'), selectedNamespaces).id;
 
-      // 2. Create and add User Message
+      // 2. Upload file to Supabase storage 'temp_documents' bucket if provided
+      let fileUrl: string | undefined = undefined;
+      if (file) {
+        setStatusText('Uploading temporary PDF document to secure storage...');
+        const fileExt = file.name.split('.').pop() || 'pdf';
+        const cleanBaseName = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const fileName = `${Date.now()}_${cleanBaseName}.${fileExt}`;
+
+        try {
+          const supabase = createClient();
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('temp_documents')
+            .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+          if (!uploadError && uploadData) {
+            const { data: pubData } = supabase.storage
+              .from('temp_documents')
+              .getPublicUrl(uploadData.path || fileName);
+            fileUrl = pubData?.publicUrl;
+
+            if (!fileUrl) {
+              const { data: signedData } = await supabase.storage
+                .from('temp_documents')
+                .createSignedUrl(uploadData.path || fileName, 3600);
+              fileUrl = signedData?.signedUrl;
+            }
+          } else {
+            console.warn('Direct client upload issue, falling back to server upload route:', uploadError?.message);
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('fileName', fileName);
+            const fallbackRes = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData,
+            });
+            if (fallbackRes.ok) {
+              const json = await fallbackRes.json();
+              fileUrl = json.fileUrl;
+            } else {
+              throw new Error(uploadError?.message || 'Storage upload failed.');
+            }
+          }
+        } catch (uploadErr: any) {
+          console.error('PDF upload encountered error, executing server-side upload fallback:', uploadErr);
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('fileName', fileName);
+            const fallbackRes = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData,
+            });
+            if (fallbackRes.ok) {
+              const json = await fallbackRes.json();
+              fileUrl = json.fileUrl;
+            } else {
+              throw new Error(`Upload fallback failed: ${uploadErr.message}`);
+            }
+          } catch (finalErr: any) {
+            console.error('All upload attempts failed:', finalErr);
+            setStreamError(`Failed to upload PDF: ${finalErr.message}`);
+            isSubmittingRef.current = false;
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+
+      // 3. Create and add User Message
       const userMessageId = generateId('user');
       const userMessage: Message = {
         id: userMessageId,
         role: 'user',
-        content: cleanContent,
+        content: cleanContent || (file ? `[Attached PDF for analysis: ${file.name}]` : ''),
         timestamp: Date.now(),
         status: 'done',
+        fileName: file?.name,
+        fileUrl: fileUrl,
       };
       addMessageToConversation(convId, userMessage);
 
-      // 3. Create placeholder Assistant Message
+      // 4. Create placeholder Assistant Message
       const assistantMessageId = generateId('asst');
       const initialAssistantMessage: Message = {
         id: assistantMessageId,
@@ -97,7 +173,7 @@ export function useStreamingChat({
       addMessageToConversation(convId, initialAssistantMessage);
 
       setIsStreaming(true);
-      setStatusText('Analyzing query and consulting K-RERA database...');
+      setStatusText(fileUrl ? 'Analyzing PDF contents with Gemini 3.5 Flash...' : 'Analyzing query and consulting K-RERA database...');
 
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
@@ -115,6 +191,8 @@ export function useStreamingChat({
           },
           body: JSON.stringify({
             messages: historyForApi,
+            message: cleanContent,
+            fileUrl: fileUrl,
             conversationId: convId,
             namespaces: selectedNamespaces,
             language: language || 'en-IN',

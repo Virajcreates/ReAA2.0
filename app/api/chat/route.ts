@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body: ChatRequestPayload = await req.json();
-    const { messages, namespaces, language = 'en-IN' } = body;
+    const { messages, message, namespaces, language = 'en-IN', fileUrl } = body;
 
     // Formulate Statutory Language Directive based on selected consultation language
     let languageLabel = 'English';
@@ -24,15 +24,20 @@ export async function POST(req: NextRequest) {
 
     const languageInstruction = getStatutoryLexiconDirective(language);
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ type: 'error', message: 'Messages array is required.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    let messageList = messages;
+    if (!messageList || !Array.isArray(messageList) || messageList.length === 0) {
+      if (message || fileUrl) {
+        messageList = [{ role: 'user', content: message || 'Please analyze the attached PDF document and extract statutory findings.' }];
+      } else {
+        return new Response(JSON.stringify({ type: 'error', message: 'Messages array or message is required.' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
 
-    const latestUserMessage = [...messages].reverse().find((m) => m.role === 'user');
-    const userQuery = latestUserMessage?.content || 'Explain K-RERA provisions';
+    const latestUserMessage = [...messageList].reverse().find((m) => m.role === 'user');
+    const userQuery = message || latestUserMessage?.content || (fileUrl ? 'Analyze attached document under K-RERA provisions' : 'Explain K-RERA provisions');
 
     const encoder = new TextEncoder();
 
@@ -61,6 +66,30 @@ export async function POST(req: NextRequest) {
         };
 
         try {
+          // If fileUrl is attached, fetch and convert PDF to Base64 for multimodal analysis
+          let inlinePdfPart: { inlineData: { data: string; mimeType: string } } | null = null;
+          if (fileUrl) {
+            safeSend('status', { statusText: 'Fetching attached PDF document for multimodal analysis...' });
+            try {
+              const pdfRes = await fetch(fileUrl);
+              if (pdfRes.ok) {
+                const arrayBuffer = await pdfRes.arrayBuffer();
+                const base64Data = Buffer.from(arrayBuffer).toString('base64');
+                inlinePdfPart = {
+                  inlineData: {
+                    data: base64Data,
+                    mimeType: 'application/pdf',
+                  },
+                };
+                safeSend('status', { statusText: 'PDF loaded. Analyzing multimodal document with Gemini 3.5 Flash...' });
+              } else {
+                console.warn(`Failed to fetch PDF from ${fileUrl}: ${pdfRes.statusText}`);
+              }
+            } catch (pdfErr: any) {
+              console.error('Error fetching PDF from fileUrl:', pdfErr);
+            }
+          }
+
           // 1. Status: Routing
           safeSend('status', { statusText: 'Analyzing query intent & selecting K-RERA vector stores...' });
 
@@ -88,14 +117,17 @@ export async function POST(req: NextRequest) {
 
           // 5. LLM Generation & Streaming with Text-to-SQL tool capability
           const gemini = getGeminiClient();
-          const ragPrompt = buildRAGPrompt(userQuery, ragResult.combinedContext, ragResult.citations) + (languageInstruction ? `\n\n${languageInstruction}` : '');
+          const multimodalDirective = inlinePdfPart
+            ? '\n\n### MULTIMODAL PDF DOCUMENT INSTRUCTIONS:\nA PDF document is attached as an inline part. Natively inspect all typed text, scanned handwriting, stamps, tables, approvals, dates, and schedules in the PDF to address the user query with statutory accuracy in the requested language.'
+            : '';
+          const ragPrompt = buildRAGPrompt(userQuery, ragResult.combinedContext, ragResult.citations) + multimodalDirective + (languageInstruction ? `\n\n${languageInstruction}` : '');
 
           let streamCompleted = false;
 
           if (gemini) {
             // Models to try in cascade
             const candidateModels = [
-              'gemini-3.6-flash',
+              'gemini-3.5-flash',
               GEMINI_CHAT_MODEL,
               GEMINI_FALLBACK_MODEL,
             ];
@@ -124,7 +156,7 @@ export async function POST(req: NextRequest) {
                 });
 
                 const contents = [];
-                const history = messages.slice(0, -1).slice(-4);
+                const history = messageList.slice(0, -1).slice(-4);
                 for (const msg of history) {
                   contents.push({
                     role: msg.role === 'user' ? 'user' : 'model',
@@ -132,9 +164,15 @@ export async function POST(req: NextRequest) {
                   });
                 }
 
+                const userParts: any[] = [];
+                if (inlinePdfPart) {
+                  userParts.push(inlinePdfPart);
+                }
+                userParts.push({ text: ragPrompt });
+
                 contents.push({
                   role: 'user',
-                  parts: [{ text: ragPrompt }],
+                  parts: userParts,
                 });
 
                 // Check if the model requests a Text-to-SQL tool call
@@ -178,7 +216,12 @@ When presenting aggregated project data (like total costs or project lists), you
                     const finalStream = await streamModel.generateContentStream({
                       contents: [
                         ...contents.slice(0, -1),
-                        { role: 'user', parts: [{ text: sqlSynthesisPrompt }] },
+                        {
+                          role: 'user',
+                          parts: inlinePdfPart
+                            ? [inlinePdfPart, { text: sqlSynthesisPrompt }]
+                            : [{ text: sqlSynthesisPrompt }],
+                        },
                       ],
                     });
 

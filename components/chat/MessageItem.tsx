@@ -17,6 +17,7 @@ import {
   Layers,
   ExternalLink,
   RotateCw,
+  FileText,
 } from 'lucide-react';
 import { getNamespaceBadgeClasses } from '@/lib/utils';
 import { RERA_NAMESPACES } from '@/types/rera';
@@ -144,11 +145,19 @@ export const MessageItem = React.memo(function MessageItem({ message, onRegenera
 
           {/* Main Message Content */}
           {isUser ? (
-            <div className="ml-auto max-w-[90%] sm:max-w-[80%] rounded-2xl rounded-tr-xs bg-white text-black font-sans px-4 py-2.5 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
-              {message.content}
+            <div className="ml-auto max-w-[90%] sm:max-w-[80%] flex flex-col items-end gap-1.5">
+              {message.fileName && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs text-zinc-300 font-mono backdrop-blur-xs">
+                  <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                  <span className="truncate max-w-[200px] sm:max-w-xs">{message.fileName}</span>
+                </div>
+              )}
+              <div className="w-full rounded-2xl rounded-tr-xs bg-white text-black font-sans px-4 py-2.5 text-sm md:text-base leading-relaxed whitespace-pre-wrap font-medium">
+                {message.content}
+              </div>
             </div>
           ) : (
-            <div className="prose prose-invert max-w-none text-sm md:text-base leading-relaxed break-words transition-all duration-300 ease-out font-sans text-white">
+            <div className="prose prose-invert max-w-none text-sm md:text-base leading-relaxed break-words transition-all duration-300 ease-out font-sans text-white prose-a:text-blue-400 prose-a:underline prose-a:decoration-blue-400/40 hover:prose-a:decoration-blue-300 prose-a:underline-offset-4">
               {message.content ? (
                 <>
                   <ReactMarkdown
@@ -232,11 +241,11 @@ export const MessageItem = React.memo(function MessageItem({ message, onRegenera
                           href={href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-white hover:text-zinc-300 underline underline-offset-3 font-medium inline-flex items-center gap-1 break-words transition-colors font-sans"
+                          className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/40 hover:decoration-blue-300 underline-offset-4 font-medium inline-flex items-center gap-1 break-words transition-colors font-sans"
                           {...props}
                         >
                           <span>{children}</span>
-                          <ExternalLink className="w-3 h-3 inline flex-shrink-0 opacity-70" />
+                          <ExternalLink className="w-3.5 h-3.5 inline flex-shrink-0 opacity-80" />
                         </a>
                       ),
                       code: ({ children, className }) => {

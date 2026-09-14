@@ -36,7 +36,7 @@ async function runVerifyRAG() {
   const pineconeApiKey = process.env.PINECONE_API_KEY;
   const pineconeIndexName = process.env.PINECONE_INDEX || process.env.PINECONE_INDEX_NAME || 'newreaa';
   const pineconeHost = process.env.PINECONE_HOST;
-  const chatModelName = process.env.GEMINI_CHAT_MODEL || 'gemini-2.5-flash';
+  const chatModelName = process.env.GEMINI_CHAT_MODEL || 'gemini-3.5-flash';
   const embeddingModelName = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
 
   console.log('Configuration Check:');
@@ -124,7 +124,7 @@ Provide a comprehensive answer regarding Prestige Park Grove based on the retrie
     });
   } catch {
     chatModel = genAI.getGenerativeModel({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-3.5-flash',
       systemInstruction,
     });
   }
@@ -138,13 +138,13 @@ Provide a comprehensive answer regarding Prestige Park Grove based on the retrie
     console.log('\n\n✅ Headless test completed successfully!');
   } catch (err: any) {
     if (err.message && err.message.includes('not found') || err.message.includes('404')) {
-      console.log(`\n⚠️ Model ${chatModelName} not available, retrying with gemini-3.6-flash...`);
+      console.log(`\n⚠️ Model ${chatModelName} not available, retrying with gemini-3.5-flash...`);
       const fallbackModel = genAI.getGenerativeModel({
-        model: 'gemini-3.6-flash',
+        model: 'gemini-3.5-flash',
         systemInstruction,
       });
       const result = await fallbackModel.generateContentStream(prompt);
-      console.log('Streaming output from gemini-3.6-flash:\n');
+      console.log('Streaming output from gemini-3.5-flash:\n');
       for await (const chunk of result.stream) {
         process.stdout.write(chunk.text());
       }

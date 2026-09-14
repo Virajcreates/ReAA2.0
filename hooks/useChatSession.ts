@@ -251,10 +251,12 @@ export function useChatSession(initialUser?: User | null) {
             created_at: new Date(now).toISOString(),
             updated_at: new Date(now).toISOString(),
           })
-          .then(({ error }) => {
-            if (error) console.warn('Supabase insert consultation notice:', error.message);
-          })
-          .catch((err) => console.warn('Supabase consultation insert error:', err));
+          .then(
+            ({ error }) => {
+              if (error) console.warn('Supabase insert consultation notice:', error.message);
+            },
+            (err: any) => console.warn('Supabase consultation insert error:', err)
+          );
       }
 
       return newConv;
@@ -289,10 +291,12 @@ export function useChatSession(initialUser?: User | null) {
           .from('consultations')
           .delete()
           .eq('id', id)
-          .then(({ error }) => {
-            if (error) console.warn('Supabase delete consultation notice:', error.message);
-          })
-          .catch((err) => console.warn('Supabase consultation delete error:', err));
+          .then(
+            ({ error }) => {
+              if (error) console.warn('Supabase delete consultation notice:', error.message);
+            },
+            (err: any) => console.warn('Supabase consultation delete error:', err)
+          );
       }
     },
     [persistConversations, activeConvKey, user, supabase]
@@ -317,10 +321,12 @@ export function useChatSession(initialUser?: User | null) {
         .from('consultations')
         .delete()
         .eq('user_id', user.id)
-        .then(({ error }) => {
-          if (error) console.warn('Supabase clear consultations notice:', error.message);
-        })
-        .catch((err) => console.warn('Supabase clear consultations error:', err));
+        .then(
+          ({ error }) => {
+            if (error) console.warn('Supabase clear consultations notice:', error.message);
+          },
+          (err: any) => console.warn('Supabase clear consultations error:', err)
+        );
     }
   }, [storageKey, activeConvKey, user, supabase]);
 
@@ -343,10 +349,12 @@ export function useChatSession(initialUser?: User | null) {
           .from('consultations')
           .update({ title: newTitle, updated_at: new Date(now).toISOString() })
           .eq('id', id)
-          .then(({ error }) => {
-            if (error) console.warn('Supabase rename consultation notice:', error.message);
-          })
-          .catch((err) => console.warn('Supabase rename consultation error:', err));
+          .then(
+            ({ error }) => {
+              if (error) console.warn('Supabase rename consultation notice:', error.message);
+            },
+            (err: any) => console.warn('Supabase rename consultation error:', err)
+          );
       }
     },
     [persistConversations, user, supabase]
@@ -415,20 +423,22 @@ export function useChatSession(initialUser?: User | null) {
             title: currentTitle,
             updated_at: new Date().toISOString(),
           })
-          .then(() => {
-            return supabase.from('messages').upsert({
-              id: message.id,
-              consultation_id: convId,
-              user_id: user.id,
-              role: message.role,
-              content: message.content,
-              routed_namespaces: message.routedNamespaces || [],
-              citations: message.citations || [],
-              status: message.status || 'done',
-              created_at: new Date(message.timestamp).toISOString(),
-            });
-          })
-          .catch((err) => console.warn('Supabase message persist notice:', err));
+          .then(
+            () => {
+              return supabase.from('messages').upsert({
+                id: message.id,
+                consultation_id: convId,
+                user_id: user.id,
+                role: message.role,
+                content: message.content,
+                routed_namespaces: message.routedNamespaces || [],
+                citations: message.citations || [],
+                status: message.status || 'done',
+                created_at: new Date(message.timestamp).toISOString(),
+              });
+            },
+            (err: any) => console.warn('Supabase message persist notice:', err)
+          );
       }
     },
     [persistConversations, user, supabase]
@@ -484,10 +494,12 @@ export function useChatSession(initialUser?: User | null) {
               routed_namespaces: msg.routedNamespaces || [],
             })
             .eq('id', messageId)
-            .then(({ error }) => {
-              if (error) console.warn('Supabase message update notice:', error.message);
-            })
-            .catch((err) => console.warn('Supabase message update error:', err));
+            .then(
+              ({ error }) => {
+                if (error) console.warn('Supabase message update notice:', error.message);
+              },
+              (err: any) => console.warn('Supabase message update error:', err)
+            );
         }
       }
     },

@@ -35,7 +35,7 @@ async function testSqlAgent() {
   }
 
   const model = gemini.getGenerativeModel({
-    model: 'gemini-3.6-flash',
+    model: 'gemini-3.5-flash',
     tools: [KRERA_SQL_TOOL as any],
   });
 
@@ -54,7 +54,7 @@ async function testSqlAgent() {
     console.log('\n📊 SQL Execution Output:', sqlExecution);
 
     // Synthesize final response
-    const synthesisModel = gemini.getGenerativeModel({ model: 'gemini-3.6-flash' });
+    const synthesisModel = gemini.getGenerativeModel({ model: 'gemini-3.5-flash' });
     const synthesisPrompt = `You executed the following SQL query on the K-RERA Supabase PostgreSQL database:
 \`\`\`sql
 ${sqlExecution.sql}

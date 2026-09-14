@@ -123,7 +123,7 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
                 href={citation.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white hover:underline"
+                className="flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 underline decoration-blue-400/40 hover:decoration-blue-300 underline-offset-4 transition-colors"
               >
                 <span>View Official Source</span>
                 <ExternalLink className="w-3.5 h-3.5" />
