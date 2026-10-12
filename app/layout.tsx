@@ -54,8 +54,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}>
-      <body className="antialiased min-h-screen bg-black text-white font-sans flex flex-col selection:bg-white selection:text-black">
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}>
+      <body className="antialiased min-h-screen bg-neutral-300 text-neutral-900 font-sans flex flex-col selection:bg-neutral-800 selection:text-neutral-50">
         {children}
       </body>
     </html>

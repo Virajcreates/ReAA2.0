@@ -19,49 +19,49 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
   const getNamespaceIcon = () => {
     switch (citation.namespace) {
       case 'rera-legal':
-        return <Scale className="w-5 h-5 text-white" />;
+        return <Scale className="w-5 h-5 text-neutral-800" />;
       case 'rera-litigation':
-        return <Gavel className="w-5 h-5 text-white" />;
+        return <Gavel className="w-5 h-5 text-neutral-800" />;
       case 'rera-complaints':
-        return <FileText className="w-5 h-5 text-white" />;
+        return <FileText className="w-5 h-5 text-neutral-800" />;
       case 'rera-projects':
-        return <Building2 className="w-5 h-5 text-white" />;
+        return <Building2 className="w-5 h-5 text-neutral-800" />;
       case 'rera-links':
-        return <Link className="w-5 h-5 text-white" />;
+        return <Link className="w-5 h-5 text-neutral-800" />;
       default:
-        return <ShieldCheck className="w-5 h-5 text-zinc-400" />;
+        return <ShieldCheck className="w-5 h-5 text-neutral-800" />;
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/40 backdrop-blur-md animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-black border border-white/12 rounded-2xl overflow-hidden backdrop-blur-xl shadow-none"
+        className="relative w-full max-w-2xl max-h-[85vh] flex flex-col bg-neutral-200 border border-neutral-400 rounded-2xl overflow-hidden backdrop-blur-xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-white/10 bg-white/[0.02]">
+        <div className="flex items-start justify-between p-5 border-b border-neutral-400 bg-neutral-300/80">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white">
+            <div className="p-2.5 rounded-xl bg-neutral-300 border border-neutral-400 text-neutral-900">
               {getNamespaceIcon()}
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span
-                  className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full border border-white/20 bg-white/10 text-white"
+                  className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full border border-neutral-400 bg-neutral-300 text-neutral-800"
                 >
                   {citation.namespace.toUpperCase()}
                 </span>
-                <span className="text-xs text-zinc-400 font-mono">
+                <span className="text-xs text-neutral-500 font-mono">
                   Match Score: {(citation.score * 100).toFixed(1)}%
                 </span>
               </div>
-              <h3 className="text-lg font-display font-bold text-white leading-snug">
+              <h3 className="text-lg font-display font-bold text-neutral-900 leading-snug">
                 {citation.title}
               </h3>
             </div>
@@ -69,7 +69,7 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-300 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -79,41 +79,41 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
         {/* Content Body */}
         <div className="flex-1 p-6 overflow-y-auto space-y-4 font-sans">
           {citation.section && (
-            <div className="p-3 bg-white/[0.03] rounded-xl border border-white/10">
-              <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+            <div className="p-3 bg-neutral-300/70 rounded-xl border border-neutral-400">
+              <span className="text-xs font-mono uppercase tracking-wider text-neutral-500">
                 Statutory Reference / Section
               </span>
-              <p className="text-sm font-semibold text-white mt-0.5">
+              <p className="text-sm font-semibold text-neutral-900 mt-0.5">
                 {citation.section}
               </p>
             </div>
           )}
 
           {citation.citationRef && (
-            <div className="p-3 bg-white/[0.03] rounded-xl border border-white/10">
-              <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+            <div className="p-3 bg-neutral-300/70 rounded-xl border border-neutral-400">
+              <span className="text-xs font-mono uppercase tracking-wider text-neutral-500">
                 Official Law Citation / Case Law
               </span>
-              <p className="text-sm font-medium text-zinc-200 mt-0.5">
+              <p className="text-sm font-medium text-neutral-800 mt-0.5">
                 {citation.citationRef}
               </p>
             </div>
           )}
 
           <div>
-            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block mb-2">
+            <span className="text-xs font-mono uppercase tracking-wider text-neutral-500 block mb-2">
               Retrieved Statutory / Ruling Context
             </span>
-            <div className="p-4 bg-black rounded-xl border border-white/10 text-sm leading-relaxed text-zinc-200 font-sans">
+            <div className="p-4 bg-neutral-300/70 rounded-xl border border-neutral-400 text-sm leading-relaxed text-neutral-800 font-sans">
               {citation.snippet}
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-white/10 bg-white/[0.02]">
-          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-            <ShieldCheck className="w-4 h-4 text-zinc-400" />
+        <div className="flex items-center justify-between p-4 border-t border-neutral-400 bg-neutral-300/80">
+          <div className="flex items-center gap-2 text-xs font-mono text-neutral-600">
+            <ShieldCheck className="w-4 h-4 text-neutral-700" />
             <span>Retrieved from K-RERA Knowledge Base</span>
           </div>
 
@@ -123,7 +123,7 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
                 href={citation.url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 underline decoration-blue-400/40 hover:decoration-blue-300 underline-offset-4 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-medium text-neutral-900 hover:text-neutral-950 underline decoration-neutral-500/60 hover:decoration-neutral-900 underline-offset-4 transition-colors"
               >
                 <span>View Official Source</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -131,7 +131,7 @@ export function CitationModal({ citation, isOpen, onClose }: CitationModalProps)
             )}
             <button
               onClick={onClose}
-              className="bg-white text-black font-semibold rounded-full hover:bg-zinc-200 px-4 py-1.5 text-xs transition-colors cursor-pointer"
+              className="bg-neutral-800 hover:bg-neutral-900 text-neutral-50 font-semibold rounded-full border border-neutral-700 px-4 py-1.5 text-xs transition-colors cursor-pointer shadow-sm"
             >
               Close
             </button>

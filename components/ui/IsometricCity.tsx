@@ -25,9 +25,9 @@ function Block({ x, y, size, height, delay, duration }: BlockProps) {
         animationDelay: `${delay}s`,
       }}
     >
-      {/* 1. Top Face: Pure White */}
+      {/* 1. Top Face: Matte Neutral */}
       <div
-        className="absolute inset-0 bg-white border border-white/40 shadow-sm"
+        className="absolute inset-0 bg-neutral-200 border border-neutral-400/40 shadow-sm"
         style={{
           transform: `translateZ(${height}px)`,
         }}

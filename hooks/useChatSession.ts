@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Conversation, Message } from '@/types/chat';
-import { generateId } from '@/lib/utils';
+import { generateId, extractSuggestionsFromContent } from '@/lib/utils';
 import { ReraNamespace } from '@/types/rera';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -103,45 +103,99 @@ export function useChatSession(initialUser?: User | null) {
         }
 
         if (dbConsultations && !isCancelled) {
-          const remoteConvs: Conversation[] = dbConsultations.map((c: any) => ({
-            id: c.id,
-            title: c.title,
-            createdAt: new Date(c.created_at).getTime(),
-            updatedAt: new Date(c.updated_at).getTime(),
-            activeNamespaces: c.active_namespaces || [
-              'rera-legal',
-              'rera-litigation',
-              'rera-complaints',
-              'rera-projects',
-            ],
-            messages: (c.messages || [])
+          const remoteConvs: Conversation[] = dbConsultations.map((c: any) => {
+            const localConv = conversationsRef.current.find((lc) => lc.id === c.id);
+
+            const mappedMessages = (c.messages || [])
               .sort(
                 (a: any, b: any) =>
                   new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
               )
-              .map((m: any) => ({
-                id: m.id,
-                role: m.role,
-                content: m.content,
-                timestamp: new Date(m.created_at).getTime(),
-                routedNamespaces: m.routed_namespaces,
-                citations: m.citations,
-                status: m.status,
-              })),
-          }));
+              .map((m: any) => {
+                // Find matching local message to guard against overwriting non-empty local text with empty DB records
+                const localMsg = localConv?.messages.find((lm) => lm.id === m.id);
 
-          setConversations(remoteConvs);
-          conversationsRef.current = remoteConvs;
+                const resolvedContent =
+                  (m.content && m.content.trim().length > 0 ? m.content : null) ||
+                  (m.text && m.text.trim().length > 0 ? m.text : null) ||
+                  (m.response && m.response.trim().length > 0 ? m.response : null) ||
+                  (m.message && m.message.trim().length > 0 ? m.message : null) ||
+                  (m.parts?.find((p: any) => p.type === 'text')?.text) ||
+                  (localMsg?.content && localMsg.content.trim().length > 0 ? localMsg.content : '') ||
+                  '';
+
+                // Historical messages retrieved from DB should be marked 'done' unless explicitly an error
+                const resolvedStatus =
+                  m.status === 'error' || localMsg?.status === 'error'
+                    ? 'error'
+                    : 'done';
+
+                const { cleanContent, suggestions: parsedSuggestions } =
+                  extractSuggestionsFromContent(resolvedContent);
+
+                const resolvedSuggestions =
+                  m.suggestions ||
+                  localMsg?.suggestions ||
+                  (parsedSuggestions.length > 0 ? parsedSuggestions : undefined);
+
+                return {
+                  id: m.id,
+                  role: m.role,
+                  content: cleanContent,
+                  timestamp: new Date(m.created_at || m.timestamp || Date.now()).getTime(),
+                  routedNamespaces: m.routed_namespaces || m.routedNamespaces || localMsg?.routedNamespaces || [],
+                  citations: m.citations || localMsg?.citations || [],
+                  suggestions: resolvedSuggestions,
+                  status: resolvedStatus,
+                  attachments: m.attachments || localMsg?.attachments,
+                  fileName: m.file_name || m.fileName || localMsg?.fileName,
+                  fileUrl: m.file_url || m.fileUrl || localMsg?.fileUrl,
+                };
+              });
+
+            // Preserve local-only messages (in-flight optimistic assistant placeholder or pending user message)
+            const localOnlyMessages = (localConv?.messages || []).filter(
+              (lm: Message) => !mappedMessages.some((rm: Message) => rm.id === lm.id)
+            );
+            const mergedMessages: Message[] = [...mappedMessages, ...localOnlyMessages].sort(
+              (a: Message, b: Message) => (a.timestamp || 0) - (b.timestamp || 0)
+            );
+
+            return {
+              id: c.id,
+              title: c.title || localConv?.title || 'New Consultation',
+              createdAt: new Date(c.created_at).getTime(),
+              updatedAt: new Date(c.updated_at).getTime(),
+              activeNamespaces: c.active_namespaces || localConv?.activeNamespaces || [
+                'rera-legal',
+                'rera-litigation',
+                'rera-complaints',
+                'rera-projects',
+              ],
+              messages: mergedMessages,
+            };
+          });
+
+          // Preserve any local consultations that are not yet in remote response
+          const unsyncedLocalConvs = conversationsRef.current.filter(
+            (lc) => !remoteConvs.some((rc) => rc.id === lc.id)
+          );
+          const mergedConvs = [...unsyncedLocalConvs, ...remoteConvs].sort(
+            (a, b) => b.updatedAt - a.updatedAt
+          );
+
+          setConversations(mergedConvs);
+          conversationsRef.current = mergedConvs;
 
           try {
-            localStorage.setItem(storageKey, JSON.stringify(remoteConvs));
+            localStorage.setItem(storageKey, JSON.stringify(mergedConvs));
           } catch (e) {
             console.warn('Failed to sync remote conversations to localStorage:', e);
           }
 
-          if (remoteConvs.length > 0 && !activeIdRef.current) {
-            setActiveConversationId(remoteConvs[0].id);
-            activeIdRef.current = remoteConvs[0].id;
+          if (mergedConvs.length > 0 && !activeIdRef.current) {
+            setActiveConversationId(mergedConvs[0].id);
+            activeIdRef.current = mergedConvs[0].id;
           }
         }
       } catch (err) {
@@ -339,7 +393,7 @@ export function useChatSession(initialUser?: User | null) {
           c.id === id ? { ...c, title: newTitle, updatedAt: now } : c
         );
         conversationsRef.current = updated;
-        persistConversations(updated);
+        persistConversations(updated, true);
         return updated;
       });
 
@@ -363,20 +417,35 @@ export function useChatSession(initialUser?: User | null) {
   // Append a message to a specific conversation ID
   const addMessageToConversation = useCallback(
     (convId: string, message: Message) => {
-      let currentTitle = 'New Consultation';
+      // 1. Determine title generation synchronously from ref
+      const existingConv = conversationsRef.current.find((c) => c.id === convId);
+      let generatedTitle: string | null = null;
+
+      if (!existingConv && message.role === 'user') {
+        const cleanText = message.content.trim();
+        generatedTitle =
+          cleanText.slice(0, 35) + (cleanText.length > 35 ? '...' : '') || 'New Consultation';
+      } else if (
+        existingConv &&
+        (existingConv.title === 'New Consultation' || !existingConv.title) &&
+        message.role === 'user'
+      ) {
+        const cleanText = message.content.trim();
+        if (cleanText) {
+          generatedTitle = cleanText.slice(0, 35) + (cleanText.length > 35 ? '...' : '');
+        }
+      }
+
+      const hasTitleChanged = Boolean(generatedTitle && generatedTitle !== 'New Consultation');
 
       setConversations((prev) => {
         const exists = prev.some((c) => c.id === convId);
         let updatedConvs: Conversation[];
 
         if (!exists) {
-          currentTitle =
-            message.role === 'user'
-              ? message.content.slice(0, 35) || 'New Consultation'
-              : 'New Consultation';
           const newConv: Conversation = {
             id: convId,
-            title: currentTitle,
+            title: generatedTitle || 'New Consultation',
             messages: [message],
             createdAt: Date.now(),
             updatedAt: Date.now(),
@@ -391,14 +460,10 @@ export function useChatSession(initialUser?: User | null) {
         } else {
           updatedConvs = prev.map((c) => {
             if (c.id === convId) {
-              let title = c.title;
-              if (c.title === 'New Consultation' && message.role === 'user') {
-                title = message.content.slice(0, 35) + (message.content.length > 35 ? '...' : '');
-              }
-              currentTitle = title;
+              const updatedTitle = generatedTitle || c.title;
               return {
                 ...c,
-                title,
+                title: updatedTitle,
                 messages: [...c.messages, message],
                 updatedAt: Date.now(),
               };
@@ -408,37 +473,94 @@ export function useChatSession(initialUser?: User | null) {
         }
 
         conversationsRef.current = updatedConvs;
-        persistConversations(updatedConvs);
+        persistConversations(updatedConvs, hasTitleChanged);
         return updatedConvs;
       });
 
-      // Persist to Supabase if authenticated
+      // 2. Persist to Supabase if authenticated
       if (user) {
-        // Ensure consultation exists/upserted
-        supabase
-          .from('consultations')
-          .upsert({
-            id: convId,
-            user_id: user.id,
-            title: currentTitle,
-            updated_at: new Date().toISOString(),
-          })
-          .then(
-            () => {
-              return supabase.from('messages').upsert({
-                id: message.id,
-                consultation_id: convId,
-                user_id: user.id,
-                role: message.role,
-                content: message.content,
-                routed_namespaces: message.routedNamespaces || [],
-                citations: message.citations || [],
-                status: message.status || 'done',
-                created_at: new Date(message.timestamp).toISOString(),
-              });
-            },
-            (err: any) => console.warn('Supabase message persist notice:', err)
-          );
+        const nowIso = new Date().toISOString();
+
+        if (hasTitleChanged && generatedTitle) {
+          // Explicitly update title in Supabase
+          supabase
+            .from('consultations')
+            .update({
+              title: generatedTitle,
+              updated_at: nowIso,
+            })
+            .eq('id', convId)
+            .then(
+              ({ error }) => {
+                if (error) console.warn('Supabase consultation title update notice:', error.message);
+              },
+              (err: any) => console.warn('Supabase consultation title update error:', err)
+            );
+        }
+
+        // Ensure consultation row exists and updated_at is refreshed
+        const shouldPersistMsg =
+          message.role === 'user' || Boolean(message.content && message.content.trim().length > 0);
+
+        if (!existingConv) {
+          supabase
+            .from('consultations')
+            .upsert({
+              id: convId,
+              user_id: user.id,
+              title: generatedTitle || 'New Consultation',
+              updated_at: nowIso,
+            })
+            .then(
+              () => {
+                if (shouldPersistMsg) {
+                  return supabase.from('messages').upsert({
+                    id: message.id,
+                    consultation_id: convId,
+                    user_id: user.id,
+                    role: message.role,
+                    content: message.content,
+                    routed_namespaces: message.routedNamespaces || [],
+                    citations: message.citations || [],
+                    status: message.status || 'done',
+                    created_at: new Date(message.timestamp).toISOString(),
+                  });
+                }
+              },
+              (err: any) => console.warn('Supabase message persist notice:', err)
+            );
+        } else {
+          // If consultation already exists, update updated_at without overwriting custom titles
+          const updatePayload: { updated_at: string; title?: string } = {
+            updated_at: nowIso,
+          };
+          if (hasTitleChanged && generatedTitle) {
+            updatePayload.title = generatedTitle;
+          }
+
+          supabase
+            .from('consultations')
+            .update(updatePayload)
+            .eq('id', convId)
+            .then(
+              () => {
+                if (shouldPersistMsg) {
+                  return supabase.from('messages').upsert({
+                    id: message.id,
+                    consultation_id: convId,
+                    user_id: user.id,
+                    role: message.role,
+                    content: message.content,
+                    routed_namespaces: message.routedNamespaces || [],
+                    citations: message.citations || [],
+                    status: message.status || 'done',
+                    created_at: new Date(message.timestamp).toISOString(),
+                  });
+                }
+              },
+              (err: any) => console.warn('Supabase message persist notice:', err)
+            );
+        }
       }
     },
     [persistConversations, user, supabase]
@@ -452,14 +574,32 @@ export function useChatSession(initialUser?: User | null) {
       setConversations((prev) => {
         const updatedConvs = prev.map((conv) => {
           if (conv.id === convId) {
-            const updatedMessages = conv.messages.map((m) => {
-              if (m.id === messageId) {
-                const res = updater(m);
-                updatedTargetMsg = res;
-                return res;
-              }
-              return m;
-            });
+            const exists = conv.messages.some((m) => m.id === messageId);
+            let updatedMessages: Message[];
+
+            if (exists) {
+              updatedMessages = conv.messages.map((m) => {
+                if (m.id === messageId) {
+                  const res = updater(m);
+                  updatedTargetMsg = res;
+                  return res;
+                }
+                return m;
+              });
+            } else {
+              // Placeholder was missing or dropped; recreate and append it immediately
+              const placeholderMsg: Message = {
+                id: messageId,
+                role: 'assistant',
+                content: '',
+                timestamp: Date.now(),
+                status: 'routing',
+              };
+              const res = updater(placeholderMsg);
+              updatedTargetMsg = res;
+              updatedMessages = [...conv.messages, res];
+            }
+
             return {
               ...conv,
               messages: updatedMessages,
@@ -481,25 +621,42 @@ export function useChatSession(initialUser?: User | null) {
         return updatedConvs;
       });
 
-      // Sync final streaming state to Supabase
-      if (user && updatedTargetMsg) {
-        const msg = updatedTargetMsg as Message;
+      // Sync final streaming state to Supabase using reliable target check
+      const targetMsgToPersist: Message | undefined =
+        updatedTargetMsg ||
+        conversationsRef.current
+          .find((c) => c.id === convId)
+          ?.messages.find((m) => m.id === messageId);
+
+      if (user && targetMsgToPersist) {
+        const msg = targetMsgToPersist;
         if (msg.status === 'done' || msg.status === 'error') {
-          supabase
-            .from('messages')
-            .update({
-              content: msg.content,
-              status: msg.status,
-              citations: msg.citations || [],
-              routed_namespaces: msg.routedNamespaces || [],
-            })
-            .eq('id', messageId)
-            .then(
-              ({ error }) => {
-                if (error) console.warn('Supabase message update notice:', error.message);
-              },
-              (err: any) => console.warn('Supabase message update error:', err)
-            );
+          if (msg.content && msg.content.trim().length > 0) {
+            const contentToPersist =
+              msg.suggestions && msg.suggestions.length > 0 && !msg.content.includes('<!--SUGGESTIONS')
+                ? `${msg.content}\n\n<!--SUGGESTIONS:${JSON.stringify(msg.suggestions)}-->`
+                : msg.content;
+
+            supabase
+              .from('messages')
+              .upsert({
+                id: messageId,
+                consultation_id: convId,
+                user_id: user.id,
+                role: msg.role,
+                content: contentToPersist,
+                status: msg.status,
+                citations: msg.citations || [],
+                routed_namespaces: msg.routedNamespaces || [],
+                created_at: new Date(msg.timestamp || Date.now()).toISOString(),
+              })
+              .then(
+                ({ error }) => {
+                  if (error) console.warn('Supabase message update notice:', error.message);
+                },
+                (err: any) => console.warn('Supabase message update error:', err)
+              );
+          }
         }
       }
     },

@@ -10,12 +10,13 @@ interface ChatInputProps {
     message: string,
     namespaces?: ReraNamespace[],
     language?: string,
-    file?: File | null
+    file?: File | File[] | null
   ) => void;
   onStop: () => void;
   isStreaming: boolean;
   isSubmitting?: boolean;
   statusText?: string;
+  prefilledPrompt?: { text: string; id: number } | null;
 }
 
 export const ChatInput = React.memo(function ChatInput({
@@ -24,10 +25,11 @@ export const ChatInput = React.memo(function ChatInput({
   isStreaming,
   isSubmitting = false,
   statusText,
+  prefilledPrompt,
 }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [selectedLang, setSelectedLang] = useState('en-IN');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const baseTextRef = useRef('');
@@ -65,31 +67,139 @@ export const ChatInput = React.memo(function ChatInput({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-        alert('Please upload a PDF document for analysis.');
-        return;
-      }
-      setSelectedFile(file);
-    }
-  };
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (!files.length) return;
 
-  const handleClearFile = () => {
-    setSelectedFile(null);
+    const MAX_FILES = 5;
+    const MAX_FILE_SIZE = 6 * 1024 * 1024; // 6MB
+
+    const availableSlots = MAX_FILES - attachments.length;
+    if (availableSlots <= 0) {
+      alert(`Maximum limit reached: You can attach at most ${MAX_FILES} PDF documents.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const validNewFiles: File[] = [];
+    let rejectedSlotsCount = 0;
+    let sizeError = false;
+    let typeError = false;
+
+    for (const file of files) {
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      if (!isPdf) {
+        typeError = true;
+        continue;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        sizeError = true;
+        continue;
+      }
+
+      // Check duplicate within existing attachments or current batch
+      const isDuplicate =
+        attachments.some((existing) => existing.name === file.name && existing.size === file.size) ||
+        validNewFiles.some((existing) => existing.name === file.name && existing.size === file.size);
+      if (isDuplicate) {
+        continue;
+      }
+
+      if (validNewFiles.length < availableSlots) {
+        validNewFiles.push(file);
+      } else {
+        rejectedSlotsCount++;
+      }
+    }
+
+    if (typeError) {
+      alert('Only PDF documents are supported for document analysis.');
+    }
+    if (sizeError) {
+      alert('One or more files exceeded the 6MB limit and were not attached.');
+    }
+    if (rejectedSlotsCount > 0) {
+      alert(`Only ${availableSlots} file(s) were attached to stay within the ${MAX_FILES}-PDF limit.`);
+    }
+
+    if (validNewFiles.length > 0) {
+      setAttachments((prev) => [...prev, ...validNewFiles]);
+    }
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  // Quick suggestion chips
+  const handleRemoveAttachment = (indexToRemove: number) => {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleClearAllAttachments = () => {
+    setAttachments([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Quick suggestion chips representing the 8 core user personas
   const quickTags = [
-    { label: 'Top 5 Districts by Projects', prompt: 'What are the top 5 districts with the highest number of registered K-RERA projects?' },
-    { label: 'Section 18 Delay Interest', prompt: 'What is the compensation and delay interest under Section 18 of RERA Act?' },
-    { label: 'Form M vs Form N', prompt: 'Explain the difference between Form M and Form N before K-RERA.' },
-    { label: '70% Escrow Account Rules', prompt: 'What are the rules regarding the 70% separate escrow account under Section 4(2)(l)(D)?' },
-    { label: 'Prestige Park Grove Status', prompt: 'Tell me about Prestige Park Grove project registration, developer, and completion date.' },
+    {
+      label: 'Verify 70% Escrow Status',
+      prompt: 'How do I verify the 70% separate escrow account compliance status for a registered project under Section 4(2)(l)(D)?',
+    },
+    {
+      label: 'Sec 18 Delay Interest',
+      prompt: 'What is the compensation and delay interest entitlement under Section 18 of RERA Act read with Karnataka Rule 18?',
+    },
+    {
+      label: 'Promoter Track Record',
+      prompt: "How can I assess a promoter's complete track record, active project delivery history, and past complaint exposure in K-RERA?",
+    },
+    {
+      label: 'Verify Statutory Clearances',
+      prompt: 'How do I verify mandatory statutory clearances including approved sanction plans, Commencement Certificate (CC), and Occupancy Certificate (OC)?',
+    },
+    {
+      label: 'Form M vs Form N Rules',
+      prompt: 'Explain the difference between Form M before the K-RERA Authority and Form N before the Adjudicating Officer under Section 71.',
+    },
+    {
+      label: 'Aggregate Litigation Check',
+      prompt: 'How can financial institutions run an aggregate litigation and land title dispute check across registered projects?',
+    },
+    {
+      label: 'Pending RRC Enforcement',
+      prompt: 'What is the procedure and enforcement timeline for executing pending Revenue Recovery Certificates (RRC) under Section 40?',
+    },
+    {
+      label: 'Is this project safe to buy?',
+      prompt: 'Is this project safe to buy? Provide a step-by-step buyer due diligence checklist based on K-RERA registration and disclosures.',
+    },
   ];
+
+  const handleSelectQuickInquiry = (promptText: string) => {
+    setInput(promptText);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      const match = promptText.match(/\[(.*?)\]/);
+      if (match && match.index !== undefined) {
+        textareaRef.current.setSelectionRange(match.index, match.index + match[0].length);
+      } else {
+        const len = promptText.length;
+        textareaRef.current.setSelectionRange(len, len);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (prefilledPrompt && prefilledPrompt.text) {
+      handleSelectQuickInquiry(prefilledPrompt.text);
+    }
+  }, [prefilledPrompt]);
 
   // Auto resize textarea
   useEffect(() => {
@@ -110,13 +220,15 @@ export const ChatInput = React.memo(function ChatInput({
     if (isListening) {
       stopListening();
     }
-    if ((!input.trim() && !selectedFile) || isBusy) return;
+    if ((!input.trim() && attachments.length === 0) || isBusy) return;
     const textToSend =
       input.trim() ||
-      'Please analyze this attached document and provide a comprehensive statutory breakdown of key clauses, dates, parties, and compliance obligations.';
-    const fileToSend = selectedFile;
+      (attachments.length === 1
+        ? 'Please analyze this attached document and provide a comprehensive statutory breakdown of key clauses, dates, parties, and compliance obligations.'
+        : `Please analyze these ${attachments.length} attached documents (${attachments.map((f) => f.name).join(', ')}) and provide a comprehensive statutory breakdown of key clauses, dates, parties, and compliance obligations.`);
+    const filesToSend = [...attachments];
     setInput('');
-    setSelectedFile(null);
+    setAttachments([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -124,71 +236,112 @@ export const ChatInput = React.memo(function ChatInput({
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-    onSendMessage(textToSend, undefined, selectedLang, fileToSend);
+    onSendMessage(textToSend, undefined, selectedLang, filesToSend);
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 pb-3 sm:pb-5">
-      {/* Quick Suggestions Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-1.5 no-scrollbar">
-        <span className="text-[10px] font-mono font-semibold text-zinc-500 uppercase tracking-wider whitespace-nowrap flex items-center gap-1 mr-1">
-          <Sparkles className="w-3 h-3 text-white" />
+    <div className="w-full max-w-5xl xl:max-w-6xl mx-auto px-3 sm:px-4 pb-3 sm:pb-5">
+      {/* Quick Suggestions Chips with Infinite Marquee Animation */}
+      <div className="flex items-center gap-2 pb-2 mb-1.5 overflow-hidden">
+        <span className="text-[10px] font-mono font-semibold text-neutral-600 uppercase tracking-wider whitespace-nowrap flex items-center gap-1 shrink-0 z-10 bg-neutral-300/60 px-2 py-0.5 rounded-full border border-neutral-400">
+          <Sparkles className="w-3 h-3 text-neutral-800" />
           <span>Quick Inquiries:</span>
         </span>
-        {quickTags.map((tag, idx) => (
-          <button
-            key={idx}
-            onClick={() => onSendMessage(tag.prompt, undefined, selectedLang, selectedFile)}
-            disabled={isBusy}
-            className="text-[11px] px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans"
-          >
-            {tag.label}
-          </button>
-        ))}
+        <div className="relative flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_20px,black_calc(100%-20px),transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,black_20px,black_calc(100%-20px),transparent)]">
+          <div className="flex items-center w-max animate-marquee hover:[animation-play-state:paused]">
+            {/* Primary Track */}
+            <div className="flex items-center gap-1.5 pr-1.5 shrink-0">
+              {quickTags.map((tag, idx) => (
+                <button
+                  key={`orig-${idx}`}
+                  type="button"
+                  onClick={() => handleSelectQuickInquiry(tag.prompt)}
+                  disabled={isBusy}
+                  className="text-[11px] px-3 py-1 rounded-full bg-neutral-200 hover:bg-neutral-300 text-neutral-800 hover:text-neutral-950 border border-neutral-400 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans shrink-0"
+                >
+                  {tag.label}
+                </button>
+              ))}
+            </div>
+            {/* Duplicate Track for Seamless Infinite Loop */}
+            <div className="flex items-center gap-1.5 pr-1.5 shrink-0" aria-hidden="true">
+              {quickTags.map((tag, idx) => (
+                <button
+                  key={`dup-${idx}`}
+                  type="button"
+                  onClick={() => handleSelectQuickInquiry(tag.prompt)}
+                  disabled={isBusy}
+                  tabIndex={-1}
+                  className="text-[11px] px-3 py-1 rounded-full bg-neutral-200 hover:bg-neutral-300 text-neutral-800 hover:text-neutral-950 border border-neutral-400 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-sans shrink-0"
+                >
+                  {tag.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Sleek B&W File Attachment Pill */}
-      {selectedFile && (
-        <div className="flex items-center gap-2 mb-2 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-white/20 text-xs text-white shadow-lg backdrop-blur-md font-mono">
-            <FileText className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-            <span className="truncate max-w-[200px] sm:max-w-xs md:max-w-md font-medium text-white">
-              {selectedFile.name}
-            </span>
-            <span className="text-[10px] text-zinc-500 shrink-0">
-              ({(selectedFile.size / 1024).toFixed(0)} KB)
-            </span>
+      {/* Sleek Horizontal File Attachment Chips */}
+      {attachments.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-2 no-scrollbar animate-fade-in">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-neutral-300 border border-neutral-400 text-[10px] text-neutral-700 font-mono shrink-0">
+            <span>{attachments.length}/5 PDFs</span>
+          </div>
+          {attachments.map((file, idx) => (
+            <div
+              key={`${file.name}-${file.size}-${idx}`}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-200 border border-neutral-400 text-xs text-neutral-900 shadow-sm font-mono shrink-0"
+            >
+              <FileText className="w-3.5 h-3.5 text-neutral-800 shrink-0" />
+              <span className="truncate max-w-[130px] sm:max-w-[180px] font-medium text-neutral-900">
+                {file.name}
+              </span>
+              <span className="text-[10px] text-neutral-600 shrink-0">
+                ({file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${(file.size / 1024).toFixed(0)} KB`})
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemoveAttachment(idx)}
+                disabled={isBusy}
+                className="ml-1 p-0.5 rounded-full text-neutral-500 hover:text-neutral-900 hover:bg-neutral-300 transition-colors cursor-pointer"
+                title={`Remove ${file.name}`}
+                aria-label={`Remove ${file.name}`}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+          {attachments.length > 1 && (
             <button
               type="button"
-              onClick={handleClearFile}
+              onClick={handleClearAllAttachments}
               disabled={isBusy}
-              className="ml-1 p-0.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              title="Remove attached PDF"
-              aria-label="Remove attached PDF"
+              className="text-[10px] text-neutral-600 hover:text-red-600 underline font-mono shrink-0 cursor-pointer px-1"
             >
-              <X className="w-3.5 h-3.5" />
+              Clear all
             </button>
-          </div>
+          )}
         </div>
       )}
 
       {/* Input Card Container */}
-      <div className={`relative rounded-2xl bg-black/90 backdrop-blur-xl border transition-all duration-200 ${
+      <div className={`relative rounded-2xl bg-neutral-200 shadow-sm border transition-all duration-200 ${
         isListening
-          ? 'border-red-500/80 ring-1 ring-red-500/50'
-          : 'border-white/12 focus-within:border-white/30'
+          ? 'border-red-500 ring-1 ring-red-500/50'
+          : 'border-neutral-400 focus-within:border-neutral-600'
       }`}>
         {/* Status Indicator Pill if actively streaming */}
         {isStreaming && statusText && (
-          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-white/5 border-b border-white/10 rounded-t-2xl text-[11px] text-white backdrop-blur-xs font-mono">
-            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-neutral-300 border-b border-neutral-400 rounded-t-2xl text-[11px] text-neutral-800 font-mono">
+            <span className="w-2 h-2 rounded-full bg-neutral-800 animate-ping" />
             <span className="font-medium truncate">{statusText}</span>
           </div>
         )}
 
         {/* Active Voice Dictation Banner */}
         {isListening && (
-          <div className="flex items-center justify-between px-3.5 py-1.5 bg-red-950/40 border-b border-red-900/40 rounded-t-2xl text-[11px] text-red-300 backdrop-blur-xs animate-fade-in font-mono">
+          <div className="flex items-center justify-between px-3.5 py-1.5 bg-red-50 border-b border-red-200 rounded-t-2xl text-[11px] text-red-700 animate-fade-in font-mono">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
               <span className="font-medium">
@@ -202,7 +355,7 @@ export const ChatInput = React.memo(function ChatInput({
             <button
               type="button"
               onClick={stopListening}
-              className="text-[10px] uppercase font-semibold tracking-wider text-red-400 hover:text-red-200 transition-colors cursor-pointer"
+              className="text-[10px] uppercase font-semibold tracking-wider text-red-600 hover:text-red-800 transition-colors cursor-pointer"
             >
               Done Dictating
             </button>
@@ -211,7 +364,7 @@ export const ChatInput = React.memo(function ChatInput({
 
         {/* Speech Error Notice */}
         {speechError && (
-          <div className="flex items-center justify-between px-3.5 py-1.5 bg-amber-950/30 border-b border-amber-900/40 rounded-t-2xl text-[11px] text-amber-300 backdrop-blur-xs animate-fade-in font-mono">
+          <div className="flex items-center justify-between px-3.5 py-1.5 bg-amber-50 border-b border-amber-200 rounded-t-2xl text-[11px] text-amber-700 animate-fade-in font-mono">
             <span className="truncate">{speechError}</span>
           </div>
         )}
@@ -233,63 +386,77 @@ export const ChatInput = React.memo(function ChatInput({
                   : selectedLang === 'hi-IN'
                   ? 'हिन्दी में बोलिए... (Listening in Hindi)'
                   : 'Listening to speech input... speak now.'
-                : selectedFile
-                ? `Ask questions about ${selectedFile.name} or press send to analyze...`
+                : attachments.length === 1
+                ? `Ask questions about ${attachments[0].name} or press send to analyze...`
+                : attachments.length > 1
+                ? `Ask questions about the ${attachments.length} attached PDFs or press send to analyze...`
                 : selectedLang === 'kn-IN'
                 ? 'K-RERA ಅಥವಾ ರಿಯಲ್ ಎಸ್ಟೇಟ್ ಬಗ್ಗೆ ಕನ್ನಡದಲ್ಲಿ ಕೇಳಿ...'
                 : selectedLang === 'hi-IN'
                 ? 'K-RERA या रियल एस्टेट के बारे में हिन्दी में पूछें...'
                 : 'Ask anything about K-RERA sections, delay compensation, project approvals, or statistics...'
             }
-            className="flex-1 max-h-44 min-h-[42px] py-2 px-2.5 bg-transparent text-sm md:text-base text-white placeholder:text-zinc-500 focus:outline-none resize-none leading-relaxed disabled:opacity-60 font-sans"
+            className="flex-1 max-h-44 min-h-[42px] py-2 px-2.5 bg-transparent text-sm md:text-base text-neutral-900 placeholder:text-neutral-500 placeholder:text-xs sm:placeholder:text-sm focus:outline-none resize-none leading-relaxed disabled:opacity-60 font-sans"
           />
 
           {/* Action Cluster: PDF Upload + Language Selector + Voice Mic + Send / Stop */}
           <div className="flex items-center gap-1.5 sm:gap-2 pb-0.5 shrink-0">
-            {/* Hidden PDF File Input */}
+            {/* Hidden Multiple PDF File Input */}
             <input
               ref={fileInputRef}
               type="file"
+              multiple
               accept="application/pdf"
               hidden
               onChange={handleFileChange}
             />
 
-            {/* Minimalist B&W Paperclip Upload Button */}
+            {/* Minimalist Paperclip Upload Button with badge */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isBusy}
-              className={`p-2 sm:p-2.5 rounded-full transition-all duration-200 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
-                selectedFile
-                  ? 'bg-white/15 text-white border border-white/20 shadow-sm'
-                  : 'text-zinc-400 hover:text-white hover:bg-white/10'
+              disabled={isBusy || attachments.length >= 5}
+              className={`relative p-2 sm:p-2.5 rounded-full transition-all duration-200 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
+                attachments.length > 0
+                  ? 'bg-neutral-300 text-neutral-800 border border-neutral-400 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-300'
               }`}
-              title={selectedFile ? `Attached: ${selectedFile.name} (Click to change)` : 'Attach PDF for multimodal analysis (scanned or typed)'}
+              title={
+                attachments.length >= 5
+                  ? 'Maximum 5 PDFs attached'
+                  : attachments.length > 0
+                  ? `${attachments.length}/5 PDFs attached (Click to add more)`
+                  : 'Attach up to 5 PDFs (Max 6MB each)'
+              }
               aria-label="Attach PDF"
             >
               <Paperclip className="w-4 h-4" />
+              {attachments.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-bold text-neutral-50 shadow">
+                  {attachments.length}
+                </span>
+              )}
             </button>
 
             {/* Compact Language Selector Dropdown */}
             <div className="relative flex items-center">
-              <Languages className="w-3.5 h-3.5 text-zinc-400 absolute left-2 pointer-events-none" />
+              <Languages className="w-3.5 h-3.5 text-neutral-500 absolute left-2 pointer-events-none" />
               <select
                 value={selectedLang}
                 onChange={(e) => setSelectedLang(e.target.value)}
                 disabled={isBusy}
-                className="appearance-none pl-7 pr-2.5 py-1.5 sm:py-2 rounded-full bg-white/5 hover:bg-white/10 text-white text-xs font-medium border border-white/10 focus:outline-none focus:border-white/30 transition-all cursor-pointer font-mono"
+                className="appearance-none pl-6 pr-2.5 py-1.5 sm:py-2 rounded-full bg-neutral-300/80 hover:bg-neutral-300 text-neutral-800 text-xs font-medium border border-neutral-400 focus:outline-none focus:border-neutral-600 transition-all cursor-pointer font-mono"
                 title="Select Consultation Language"
                 aria-label="Select Consultation Language"
               >
-                <option value="en-IN" className="bg-black text-white">
-                  English (EN)
+                <option value="en-IN" className="bg-neutral-200 text-neutral-800">
+                  Eng
                 </option>
-                <option value="kn-IN" className="bg-black text-white">
-                  ಕನ್ನಡ (KN)
+                <option value="kn-IN" className="bg-neutral-200 text-neutral-800">
+                  Kan
                 </option>
-                <option value="hi-IN" className="bg-black text-white">
-                  हिन्दी (HI)
+                <option value="hi-IN" className="bg-neutral-200 text-neutral-800">
+                  Hin
                 </option>
               </select>
             </div>
@@ -302,8 +469,8 @@ export const ChatInput = React.memo(function ChatInput({
                 disabled={isBusy}
                 className={`p-2 sm:p-2.5 rounded-full transition-all duration-200 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
                   isListening
-                    ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/70 animate-pulse'
-                    : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                    ? 'bg-red-500/20 text-red-600 ring-1 ring-red-500/70 animate-pulse'
+                    : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-300'
                 }`}
                 title={isListening ? 'Stop voice dictation (Listening...)' : 'Dictate query (Speech-to-Text)'}
                 aria-label={isListening ? 'Stop voice dictation' : 'Start voice dictation'}
@@ -314,7 +481,7 @@ export const ChatInput = React.memo(function ChatInput({
               <button
                 type="button"
                 disabled
-                className="p-2 sm:p-2.5 rounded-full text-zinc-600 opacity-40 cursor-not-allowed"
+                className="p-2 sm:p-2.5 rounded-full text-neutral-400 opacity-40 cursor-not-allowed"
                 title="Voice dictation not supported in this browser"
                 aria-label="Voice not supported"
               >
@@ -335,8 +502,8 @@ export const ChatInput = React.memo(function ChatInput({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={(!input.trim() && !selectedFile) || isBusy}
-                className="p-2 sm:p-2.5 rounded-full bg-white hover:bg-zinc-200 text-black transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                disabled={(!input.trim() && attachments.length === 0) || isBusy}
+                className="p-2 sm:p-2.5 rounded-full bg-neutral-800 hover:bg-neutral-900 text-neutral-50 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
                 title="Send inquiry"
               >
                 <Send className="w-4 h-4" />
@@ -347,9 +514,9 @@ export const ChatInput = React.memo(function ChatInput({
       </div>
 
       {/* Footer Disclaimer */}
-      <div className="mt-2 px-1 text-[10px] text-zinc-500 text-center sm:text-left font-sans">
+      <div className="mt-2 px-1 text-[10px] text-neutral-600 text-center sm:text-left font-sans">
         <p>
-          REAA synthesizes the RERA Act 2016 and K-RERA public disclosures. Output is for research purposes and does not constitute formal legal counsel.
+          REAA synthesizes statutory provisions under the RERA Act, 2016 and official K-RERA public disclosures. All information is derived exclusively from public regulatory filings current through August 2026, containing no private or confidential data.
         </p>
       </div>
     </div>

@@ -40,8 +40,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If a user is already logged in and attempts to access /login, redirect to /
+  // If a user is already logged in and attempts to access /login, redirect to next destination or /
   if (user && request.nextUrl.pathname === '/login') {
+    const next = request.nextUrl.searchParams.get('next');
+    if (next && next.startsWith('/')) {
+      return NextResponse.redirect(new URL(next, request.url));
+    }
     url.pathname = '/';
     return NextResponse.redirect(url);
   }

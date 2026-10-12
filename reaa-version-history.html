@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REAA — Engineering Version Release Matrix (v0.1.0 to v1.5.0 Expanded Matrix)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-primary: #030712;
+      --bg-secondary: #0b1329;
+      --bg-card: #0f172a;
+      --bg-card-hover: #1e293b;
+      --border-subtle: #1e293b;
+      --border-strong: #334155;
+      --border-accent: #2563eb;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-blue-light: #60a5fa;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+      --accent-rose: #f43f5e;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-bottom: 60px;
+    }
+
+    /* Fixed Top Control Bar */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(3, 7, 18, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-emblem {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+      box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: #ffffff;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border-strong);
+      color: var(--text-secondary);
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+
+    .badge-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+
+    .print-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    .print-btn:hover {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+    }
+
+    .print-btn:active {
+      transform: translateY(0);
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 24px 0 24px;
+    }
+
+    /* Document Header */
+    .doc-header {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0.4) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 36px 32px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .doc-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #2563eb, #06b6d4, #10b981, #8b5cf6);
+    }
+
+    .doc-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent-blue-light);
+      margin-bottom: 12px;
+    }
+
+    .doc-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: #ffffff;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .doc-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 820px;
+      margin-bottom: 24px;
+      font-weight: 400;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 20px;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .meta-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    .meta-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .meta-value code {
+      font-family: var(--font-mono);
+      color: var(--accent-blue-light);
+      background: rgba(37, 99, 235, 0.1);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* Section Divider */
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 12px;
+    }
+
+    .section-heading {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Release Cards Timeline */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .version-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 26px 28px;
+      position: relative;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .version-card:hover {
+      border-color: var(--border-strong);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .version-card.highlight {
+      border-color: rgba(37, 99, 235, 0.6);
+      box-shadow: 0 0 24px rgba(37, 99, 235, 0.12);
+    }
+
+    .card-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .version-ident {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .version-badge {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 6px;
+      background: rgba(37, 99, 235, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: var(--accent-blue-light);
+      letter-spacing: 0.2px;
+    }
+
+    .version-badge.emerald {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .version-badge.purple {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #a78bfa;
+    }
+
+    .version-badge.amber {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+
+    .version-codename {
+      font-size: 19px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.4px;
+    }
+
+    .tag-cluster {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .pill-tag.accent {
+      background: rgba(37, 99, 235, 0.12);
+      border-color: rgba(37, 99, 235, 0.35);
+      color: var(--accent-blue-light);
+    }
+
+    .card-description {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    .deliverables-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .deliverables-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 768px) {
+      .deliverables-list.two-col {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .deliverables-list li {
+      position: relative;
+      padding-left: 18px;
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    .deliverables-list li::before {
+      content: '›';
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--accent-blue);
+      font-weight: bold;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .deliverables-list li strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .deliverables-list li code {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-strong);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+    }
+
+    /* Architecture Summary Box */
+    .arch-summary {
+      background: linear-gradient(180deg, #0b1329 0%, #080d1a 100%);
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 28px 30px;
+      margin-top: 40px;
+    }
+
+    .arch-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .arch-box {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .arch-box h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-blue-light);
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+    }
+
+    .arch-box p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Footer */
+    .doc-footer {
+      border-top: 1px solid var(--border-subtle);
+      margin-top: 48px;
+      padding-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Print-Optimized Stylesheet */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 16mm 14mm 16mm 14mm;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        padding-bottom: 0 !important;
+        font-size: 11pt !important;
+      }
+
+      .no-print,
+      .top-bar {
+        display: none !important;
+      }
+
+      .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .doc-header {
+        background: #f8fafc !important;
+        border: 1.5px solid #cbd5e1 !important;
+        padding: 20px 24px !important;
+        margin-bottom: 24px !important;
+      }
+
+      .doc-title {
+        color: #0f172a !important;
+        font-size: 22pt !important;
+      }
+
+      .doc-subtitle {
+        color: #475569 !important;
+        font-size: 10pt !important;
+        margin-bottom: 16px !important;
+      }
+
+      .meta-grid {
+        border-top: 1px solid #cbd5e1 !important;
+        padding-top: 12px !important;
+      }
+
+      .meta-label {
+        color: #64748b !important;
+      }
+
+      .meta-value {
+        color: #0f172a !important;
+      }
+
+      .meta-value code {
+        background: #e2e8f0 !important;
+        color: #1e3a8a !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+
+      .version-card {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        background: #ffffff !important;
+        border: 1.5px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        padding: 16px 20px !important;
+        margin-bottom: 16px !important;
+      }
+
+      .version-card.highlight {
+        border-color: #2563eb !important;
+        background: #f0f7ff !important;
+      }
+
+      .version-badge {
+        background: #eff6ff !important;
+        border-color: #93c5fd !important;
+        color: #1e40af !important;
+      }
+
+      .version-codename {
+        color: #0f172a !important;
+        font-size: 13pt !important;
+      }
+
+      .pill-tag {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #334155 !important;
+      }
+
+      .pill-tag.accent {
+        background: #dbeafe !important;
+        border-color: #93c5fd !important;
+        color: #1e40af !important;
+      }
+
+      .card-description {
+        color: #334155 !important;
+        font-size: 9.5pt !important;
+        margin-bottom: 10px !important;
+      }
+
+      .deliverables-title {
+        color: #475569 !important;
+        font-size: 8.5pt !important;
+      }
+
+      .deliverables-list li {
+        color: #1e293b !important;
+        font-size: 9pt !important;
+      }
+
+      .deliverables-list li::before {
+        color: #2563eb !important;
+      }
+
+      .deliverables-list li strong {
+        color: #0f172a !important;
+      }
+
+      .deliverables-list li code {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        color: #0369a1 !important;
+      }
+
+      .arch-summary {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        background: #f8fafc !important;
+        border: 1.5px solid #cbd5e1 !important;
+        padding: 18px 20px !important;
+      }
+
+      .arch-title {
+        color: #0f172a !important;
+      }
+
+      .arch-box {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+
+      .arch-box h4 {
+        color: #1e40af !important;
+      }
+
+      .arch-box p {
+        color: #334155 !important;
+      }
+
+      .doc-footer {
+        border-top: 1px solid #cbd5e1 !important;
+        color: #64748b !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Action Control Bar -->
+  <header class="top-bar no-print">
+    <div class="brand-cluster">
+      <div class="brand-emblem">R</div>
+      <div>
+        <div class="brand-title">REAA Engineering Changelog</div>
+        <div class="brand-subtitle">Real Estate Advisory Agent • 15-Version Expanded Matrix v0.1.0 – v1.5.0</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="badge-pill">
+        <span class="badge-pill-dot"></span>
+        <span>15 Engineering Releases</span>
+      </div>
+      <div class="badge-pill">
+        <span>K-RERA Act 2016 Compliant</span>
+      </div>
+      <button class="print-btn" onclick="window.print()" title="Export document to PDF or physical printer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        <span>Export to PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Document Header -->
+    <section class="doc-header">
+      <div class="doc-kicker">
+        <span>K-RERA Domain AI Advisory Platform</span>
+        <span>•</span>
+        <span>15-Version Expanded Matrix</span>
+      </div>
+      <h1 class="doc-title">REAA Version History & Architecture Progression (v0.1.0 – v1.5.0)</h1>
+      <p class="doc-subtitle">
+        Comprehensive release documentation tracking the evolution of REAA from foundational tri-store vector routing (v0.1.0), production multi-document due diligence (v1.0.0), through the Phase III enterprise roadmap (v1.5.0).
+      </p>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Release Span</span>
+          <span class="meta-value"><code>v0.1.0</code> → <code>v1.5.0</code></span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Primary AI Model</span>
+          <span class="meta-value">Google Gemini 3.5 Flash</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Hybrid Stores</span>
+          <span class="meta-value">Pinecone + Astra DB + Supabase</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Public Data Corpus</span>
+          <span class="meta-value">9,800+ Projects • 52,500+ Complaints</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Version Release Cards -->
+    <div class="section-title-wrap">
+      <h2 class="section-heading">
+        <span>Engineering Release Timeline</span>
+      </h2>
+      <span class="section-tag">15 Sequential Engineering Milestones (10 Production • 5 Phase III Roadmap)</span>
+    </div>
+
+    <div class="timeline">
+
+      <!-- v0.1.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.1.0</span>
+            <h3 class="version-codename">Tri-Store Genesis</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Foundation</span>
+            <span class="pill-tag">Pinecone</span>
+            <span class="pill-tag">Astra DB</span>
+            <span class="pill-tag">Supabase</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Architectural inception establishing REAA's hybrid multi-store retrieval engine. Decoupled statutory legal research, direct project PDF document retrieval, and relational data querying across dedicated storage engines.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Pinecone Vector Store:</strong> Configured 3,072-dimensional vector indexing across 4 discrete namespaces: <code>rera-legal</code>, <code>rera-projects</code>, <code>rera-complaints</code>, and <code>rera-litigation</code> using <code>gemini-embedding-001</code>.</li>
+          <li><strong>DataStax Astra DB:</strong> Initialized unstructured collection <code>rera_links</code> for lightning-fast semantic retrieval of project document hyperlinks, sanction plans, and certificates.</li>
+          <li><strong>Supabase PostgreSQL:</strong> Schema modeling for 9,800+ registered K-RERA projects, 52,500+ consumer/promoter complaints, and 16,500+ court litigations.</li>
+          <li><strong>Intelligent Query Router:</strong> Built Gemini-powered router classifying user intent into statutory legal search, link lookups, or database aggregations.</li>
+        </ul>
+      </article>
+
+      <!-- v0.2.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.2.0</span>
+            <h3 class="version-codename">Statistical Intelligence & Agentic Text-to-SQL</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Text-to-SQL</span>
+            <span class="pill-tag">PostgreSQL</span>
+            <span class="pill-tag">Agentic RAG</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Integrated autonomous relational function calling. Equipped Gemini with an in-engine SQL execution tool to answer complex quantitative inquiries directly from verified database records.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Text-to-SQL Tool Declaration:</strong> Created <code>query_krera_sql_database</code> function schema allowing Gemini to autonomously generate and execute read-only PostgreSQL queries.</li>
+          <li><strong>Strict Query Bounding:</strong> Enforced guardrails preventing unsolicited promoter footprint crawling; bounded search strictly to user-specified entity or locality.</li>
+          <li><strong>Structured Table Synthesizer:</strong> Formatted multi-project statistical aggregates (e.g., total project costs, district project counts) into clean Markdown tables.</li>
+          <li><strong>Zero-Leakage Security:</strong> Implemented runtime sanitization to prevent raw SQL query dumps, database schema leakage, or internal thought exposure to non-technical users.</li>
+        </ul>
+      </article>
+
+      <!-- v0.3.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.3.0</span>
+            <h3 class="version-codename">Trilingual Statutory Lexicon</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Vernacular</span>
+            <span class="pill-tag">Kannada</span>
+            <span class="pill-tag">Hindi</span>
+            <span class="pill-tag">RERA Act 2016</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Engineered native multi-lingual statutory grounding. Enabled accurate, verbatim legal terminology translation across English, Kannada (ಕನ್ನಡ), and Hindi (हिन्दी) without semantic drift.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Statutory Lexicon Engine:</strong> Developed <code>getStatutoryLexiconDirective()</code> providing precise vernacular definitions for RERA Section 18 delay interest and Section 4(2)(l)(D) escrow accounts.</li>
+          <li><strong>Karnataka RERA Rule 18 Fidelity:</strong> Hardcoded statutory interest benchmark: <strong>SBI Highest MCLR + 2.00%</strong> in Kannada (ಎಸ್.ಬಿ.ಐ. ಗರಿಷ್ಠ ಎಂ.ಸಿ.ಎಲ್.ಆರ್ + 2.00%) and Hindi.</li>
+          <li><strong>Form M vs. Form N Classification:</strong> Grounded distinction between Form M (Adjudication before Authority) and Form N (Compensation before Adjudicating Officer).</li>
+          <li><strong>Fallback Statutory Generator:</strong> Formulated structured fallback legal advisory templates strictly referencing landmark Supreme Court and High Court precedents.</li>
+        </ul>
+      </article>
+
+      <!-- v0.4.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.4.0</span>
+            <h3 class="version-codename">Cinematic Identity & Monochromatic UI</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">UI/UX</span>
+            <span class="pill-tag">Speech-to-Text</span>
+            <span class="pill-tag">Design System</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Revamped front-end design system into a premium, monochromatic executive interface inspired by Uber and Grok, complemented by hardware-accelerated video backgrounds and voice dictation.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Monochromatic Pure Dark Mode:</strong> Tailored color system featuring deep slate (`#030712`, `#0f172a`), high-contrast typography, and electric blue semantic citation badges (`text-blue-400`).</li>
+          <li><strong>Hardware-Accelerated Cinematic Video:</strong> Implemented seamless looping HTML5 background video (`Metropolis_constructing_itself.mp4`) with custom SVG emblem masking on auth routes.</li>
+          <li><strong>Trilingual Voice Dictation:</strong> Built <code>useSpeechToText</code> hook supporting continuous, interim voice recognition in Kannada (`kn-IN`), Hindi (`hi-IN`), and English (`en-IN`).</li>
+          <li><strong>Citation Modal Inspector:</strong> Interactive drawer component allowing users to inspect full statutory text, court case citations, and official regulatory gazettes.</li>
+        </ul>
+      </article>
+
+      <!-- v0.5.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.5.0</span>
+            <h3 class="version-codename">Session Persistence & Consultation Forking</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">State Engine</span>
+            <span class="pill-tag">Supabase RLS</span>
+            <span class="pill-tag">Sharing</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Delivered multi-session state synchronization and shareable consultation links. Enabled authenticated users to persist consultation histories and clone read-only shared threads.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Optimistic Multi-Layer Storage:</strong> Dual synchronization architecture caching sessions in user-scoped <code>localStorage</code> and syncing to Supabase <code>consultations</code> and <code>messages</code> tables.</li>
+          <li><strong>Automated Title Persistence:</strong> Dynamic consultation naming that derives titles from the first user query and persists row updates to Supabase on reload.</li>
+          <li><strong>Read-Only Consultation Sharing:</strong> Implemented <code>/share/[id]</code> route leveraging service role bypass for unauthenticated or external viewing.</li>
+          <li><strong>Consultation Forking Server Action:</strong> Created secure server action cloning shared consultations into the viewer's account to allow immediate continuation.</li>
+        </ul>
+      </article>
+
+      <!-- v0.6.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.6.0</span>
+            <h3 class="version-codename">Liquid Token Streaming & Viewport Stabilizer</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Streaming</span>
+            <span class="pill-tag">RAF Engine</span>
+            <span class="pill-tag">Auto-Scroll</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Overhauled streaming text generation. Eliminated markdown flickering, visual jitter, and auto-scroll race conditions using an adaptive requestAnimationFrame throttling engine.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Liquid RAF Ticker:</strong> Built <code>use-liquid-stream.ts</code> with a dynamic catch-up easing loop decoupling raw SSE network chunk arrival from UI rendering state.</li>
+          <li><strong>Timestamp Render Throttling:</strong> Enforced a stable ~30ms rendering cadence, preventing <code>react-markdown</code> re-parsing stutter at monitor refresh rates.</li>
+          <li><strong>Non-Colliding Viewport Tracking:</strong> Intelligent auto-scroll engine pausing programmatic scrolling during manual inspection and resuming smoothly on completion.</li>
+          <li><strong>Strict Chronological Ordering:</strong> Resolved flex-direction regressions to guarantee user prompts remain permanently anchored above assistant responses.</li>
+        </ul>
+      </article>
+
+      <!-- v0.7.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.7.0</span>
+            <h3 class="version-codename">Multimodal Document Vision & Privacy TTL</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Multimodal</span>
+            <span class="pill-tag">Gemini Vision</span>
+            <span class="pill-tag">pg_cron</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Enabled native PDF document understanding directly within the chat interface. Integrated ephemeral cloud storage governed by strict automated deletion policies for zero data retention.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Native Gemini Vision Pipeline:</strong> Converted uploaded PDF documents into raw Base64 inline data parts, allowing Gemini 3.5 Flash to inspect typed text, stamps, and floor plans without OCR.</li>
+          <li><strong>Ephemeral Storage Bucket:</strong> Configured Supabase Storage bucket <code>temp_documents</code> for temporary file holding during active consultation sessions.</li>
+          <li><strong>Automated 1-Hour TTL:</strong> Deployed a 15-minute <code>pg_cron</code> database routine automatically purging uploaded files older than 1 hour.</li>
+          <li><strong>Server-Side Upload Fallback:</strong> Built <code>/api/upload</code> fallback route to ensure resilient uploads if direct client-side storage uploads encounter network issues.</li>
+        </ul>
+      </article>
+
+      <!-- v0.8.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.8.0</span>
+            <h3 class="version-codename">Multi-PDF Attachment Input & Validation</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Multi-File UI</span>
+            <span class="pill-tag">Client Validation</span>
+            <span class="pill-tag">UX Carousel</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Upgraded the chat input container to support multiple concurrent PDF attachments with strict client-side validation guardrails and a horizontal preview chip carousel.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Multi-File Array State:</strong> Migrated single-file input state to an array holding up to 5 concurrent PDF attachments in <code>ChatInput.tsx</code>.</li>
+          <li><strong>Strict Client-Side Validation:</strong> Implemented guardrails enforcing a 5-file cap, 6MB size limit per file, PDF MIME/extension verification, and duplicate file prevention.</li>
+          <li><strong>Horizontal Chip Carousel:</strong> Rendered scrollable attachment pills featuring truncated filenames, human-readable KB/MB sizes, and individual removal buttons.</li>
+          <li><strong>Dynamic Status Indicators:</strong> Added a paperclip badge counter and dynamic textarea placeholders reflecting the exact number of attached documents.</li>
+        </ul>
+      </article>
+
+      <!-- v0.9.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge">v0.9.0</span>
+            <h3 class="version-codename">End-to-End Multi-File Ingestion & Stream Decompression</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">FormData Pipeline</span>
+            <span class="pill-tag">zlib Extraction</span>
+            <span class="pill-tag">Badge Mapping</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Bridged multi-file attachments from the client UI to the backend streaming endpoint. Implemented native PDF stream decompression and multi-badge rendering in chat messages.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Multipart FormData Pipeline:</strong> Replaced JSON-only submission in <code>useStreamingChat.ts</code> with a dynamic <code>FormData</code> dispatch appending all files.</li>
+          <li><strong>Multi-File Badge Rendering:</strong> Updated <code>MessageItem.tsx</code> to map over <code>message.attachments</code>, displaying discrete badges for all attached PDFs above the prompt.</li>
+          <li><strong>Native zlib Text Extractor:</strong> Implemented server-side streaming PDF text extraction using Node.js built-in <code>zlib</code> decompression for Tj/TJ operators.</li>
+          <li><strong>Explicit Document Boundary Tagging:</strong> Injected structured boundary markers (<code>--- DOCUMENT N: [filename] ---</code>) into the RAG context.</li>
+        </ul>
+      </article>
+
+      <!-- v1.0.0 -->
+      <article class="version-card highlight">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge emerald">v1.0.0</span>
+            <h3 class="version-codename">Multi-Doc NOC & Statutory Due Diligence</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Production Flagship</span>
+            <span class="pill-tag">NOC Cross-Check</span>
+            <span class="pill-tag">AMSL/PSML Analysis</span>
+            <span class="pill-tag">Full Suite</span>
+          </div>
+        </div>
+        <p class="card-description">
+          The production milestone unifying REAA into a full-fledged autonomous legal due diligence engine. Performs automated cross-document comparative analysis across multiple uploaded clearances, NOCs, and sanction plans.
+        </p>
+        <div class="deliverables-title">Technical Deliverables & Implementation Highlights:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Multi-Document Comparative Directive:</strong> Formulated an exhaustive prompt directive instructing Gemini to cross-examine and compare all uploaded documents.</li>
+          <li><strong>AMSL & PSML Height Verification:</strong> Automated extraction and cross-verification of Above Mean Sea Level (AMSL) and Projected Structure Mean Level (PSML) heights against AAI/BBMP NOC caps.</li>
+          <li><strong>Cross-Document Covenant Reconciliation:</strong> Automatic detection of conflicting clauses, completion dates, and unauthorized structural deviations between sanction letters and agreements.</li>
+          <li><strong>Unified AI Engine:</strong> Complete integration of Dense Vector Search (Pinecone), Document Links (Astra DB), Text-to-SQL (Supabase), and Multimodal Multi-PDF Analysis (Gemini 3.5 Flash).</li>
+        </ul>
+      </article>
+
+      <!-- v1.1.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge purple">v1.1.0</span>
+            <h3 class="version-codename">Citation Engine & Deterministic Footnotes</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Phase III Roadmap</span>
+            <span class="pill-tag">Citation Graph</span>
+            <span class="pill-tag">Page-Level Anchors</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Engineers deterministic vector-to-text citation anchoring. Maps every legal advisory statement directly to exact underlying statutory provisions, gazette circulars, and PDF page numbers.
+        </p>
+        <div class="deliverables-title">Planned Technical Deliverables:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Deterministic Footnote Mapping:</strong> Implement vector-to-text mapping for footnotes linking exact generated sentences to source legal circulars.</li>
+          <li><strong>Page-Level Hyperlink Badges:</strong> Interactive hyperlink badges linking directly to specific PDF pages, clauses, and gazette extracts.</li>
+          <li><strong>Semantic Cross-Verification Engine:</strong> Verification pass comparing generated quotes against verbatim statutory text to prevent hallucinated citations.</li>
+          <li><strong>Context Tooltips:</strong> Hover-state tooltips displaying raw context snippets and extracted gazette passages on citation tags.</li>
+        </ul>
+      </article>
+
+      <!-- v1.2.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge purple">v1.2.0</span>
+            <h3 class="version-codename">Telemetry Dashboard & Autonomous Routing Intelligence</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Phase III Roadmap</span>
+            <span class="pill-tag">Observability</span>
+            <span class="pill-tag">Clustering</span>
+            <span class="pill-tag">Routing Optimization</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Constructs an enterprise observability plane. Monitors real-time token consumption, query routing accuracy, zero-row fallbacks, and citizen query cluster distributions.
+        </p>
+        <div class="deliverables-title">Planned Technical Deliverables:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Admin Telemetry Dashboard:</strong> Construct secure admin dashboard for token consumption, latency profiling, and model usage analytics.</li>
+          <li><strong>Query Clustering Engine:</strong> Embed-and-cluster pipeline categorizing top recurring citizen inquiries (e.g., Section 18 delay interest, OC/CC verification, escrow audits).</li>
+          <li><strong>Routing Optimization:</strong> Dynamic latency balancing between dense Vector search and Text-to-SQL function calling.</li>
+          <li><strong>Zero-Row Fallback Monitoring:</strong> Proactive detection and alerting for zero-row SQL returns to trigger automated semantic search fallbacks.</li>
+        </ul>
+      </article>
+
+      <!-- v1.3.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge purple">v1.3.0</span>
+            <h3 class="version-codename">Responsive Architecture & Low-Power Viewport Engine</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Phase III Roadmap</span>
+            <span class="pill-tag">Mobile First</span>
+            <span class="pill-tag">60FPS RAF</span>
+            <span class="pill-tag">Touch Gestures</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Tailors REAA for low-power mobile devices and touch-first interactions. Re-engineers drawer navigation, swipe interactions, and GPU-optimized liquid token streaming.
+        </p>
+        <div class="deliverables-title">Planned Technical Deliverables:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Responsive Drawer UI Patterns:</strong> Re-architect layout with bottom-sheet drawer UI patterns and slide-out citation inspectors for mobile screens.</li>
+          <li><strong>Horizontal Swipe Navigation:</strong> Gesture engine enabling intuitive horizontal swipe gestures between chat feed, document preview, and citation drawers.</li>
+          <li><strong>Touch-Scroll Regulatory Tables:</strong> Fluid horizontal touch-scrolling with sticky column headers for multi-column project and litigation tables.</li>
+          <li><strong>60FPS Low-Power Optimization:</strong> Adaptive frame-rate throttling in liquid stream engine tuned for mobile web views and battery-saver modes.</li>
+        </ul>
+      </article>
+
+      <!-- v1.4.0 -->
+      <article class="version-card">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge purple">v1.4.0</span>
+            <h3 class="version-codename">Spatial Intelligence & Multimodal Blueprint Vision</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Phase III Roadmap</span>
+            <span class="pill-tag">Spatial OCR</span>
+            <span class="pill-tag">Blueprints</span>
+            <span class="pill-tag">Site Maps</span>
+          </div>
+        </div>
+        <p class="card-description">
+          Expands multimodal reasoning into spatial and structural image inputs. Ingests raw architectural blueprints, site plans, and layout drawings for automated building code verification.
+        </p>
+        <div class="deliverables-title">Planned Technical Deliverables:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Image Format Ingestion:</strong> Expand upload pipeline to support high-resolution images (<code>JPG</code>, <code>PNG</code>, <code>WebP</code>) alongside PDFs.</li>
+          <li><strong>Blueprint Vision OCR:</strong> Fine-tuned Gemini Vision OCR specialized for architectural site maps, elevation drawings, and structural legends.</li>
+          <li><strong>Spatial Intelligence Queries:</strong> Autonomous spatial queries detecting fire exits, setbacks, green zones, road widths, and boundary encroachments.</li>
+          <li><strong>Unstructured Visual Table Parsing:</strong> Extraction of complex non-textual layout tables, floor area ratios (FAR), and carpet area calculation schedules.</li>
+        </ul>
+      </article>
+
+      <!-- v1.5.0 -->
+      <article class="version-card highlight">
+        <div class="card-top">
+          <div class="version-ident">
+            <span class="version-badge amber">v1.5.0</span>
+            <h3 class="version-codename">Autonomous Legal Brief & Statutory Memorandum Generator</h3>
+          </div>
+          <div class="tag-cluster">
+            <span class="pill-tag accent">Phase III Roadmap</span>
+            <span class="pill-tag">Legal Brief</span>
+            <span class="pill-tag">Executive Export</span>
+            <span class="pill-tag">Courtroom Format</span>
+          </div>
+        </div>
+        <p class="card-description">
+          The Phase III enterprise flagship. Transforms consultative advisory threads into formal, courtroom-ready legal memoranda, statutory complaints, and executive investor due diligence briefs.
+        </p>
+        <div class="deliverables-title">Planned Technical Deliverables:</div>
+        <ul class="deliverables-list two-col">
+          <li><strong>Automated PDF Compilation Engine:</strong> Synthesize multi-turn consultation history into formal, publication-grade legal advisory memos.</li>
+          <li><strong>Executive Legal Typography:</strong> Courtroom-ready formatting with numbered statutory sections, legal disclaimer annexures, and formal signature blocks.</li>
+          <li><strong>Structured Citation Appendix:</strong> Automatically compile complete K-RERA citation appendix referencing all invoked Act sections, rules, and precedents.</li>
+          <li><strong>One-Click Brief Generation:</strong> Instant single-click export producing client-ready PDF legal briefs with automated pagination and watermarking.</li>
+        </ul>
+      </article>
+
+    </div>
+
+    <!-- Architecture Summary Matrix -->
+    <section class="arch-summary">
+      <h3 class="arch-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
+        </svg>
+        <span>Production & Phase III Architectural Topology at v1.5.0</span>
+      </h3>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+        REAA integrates four specialized computational planes to guarantee verbatim legal accuracy, high-throughput document retrieval, and deep quantitative intelligence.
+      </p>
+
+      <div class="arch-grid">
+        <div class="arch-box">
+          <h4>🌲 Pinecone Vector DB</h4>
+          <p>3,072-dim embeddings indexing statutory RERA provisions, court rulings, and project histories across 4 discrete namespaces.</p>
+        </div>
+        <div class="arch-box">
+          <h4>⚡ DataStax Astra DB</h4>
+          <p>High-throughput semantic vector collection <code>rera_links</code> serving over 200,000 official project PDF documents and sanction plans.</p>
+        </div>
+        <div class="arch-box">
+          <h4>🐘 Supabase PostgreSQL</h4>
+          <p>Autonomous Text-to-SQL execution engine querying structured records across 9,800+ projects, 52k+ complaints, and 16k+ litigations.</p>
+        </div>
+        <div class="arch-box">
+          <h4>📄 Gemini 3.5 Flash</h4>
+          <p>Multimodal document vision engine ingesting up to 5 concurrent PDF clearances for cross-document NOC and covenant validation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Document Footer -->
+    <footer class="doc-footer">
+      <div>
+        <span>REAA Platform Release Documentation</span>
+        <span>•</span>
+        <span>Generated for Engineering Archive</span>
+      </div>
+      <div>
+        <span>Authority: RERA Act 2016 / K-RERA Rules 2017</span>
+        <span>•</span>
+        <span>Status: Production Verified</span>
+      </div>
+    </footer>
+
+  </main>
+
+</body>
+</html>

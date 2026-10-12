@@ -32,25 +32,92 @@ export const KRERA_SYSTEM_PROMPT = `You are the REAA Advisory AI Agent, an autho
 6. **TEXT-TO-SQL & QUANTITATIVE AGGREGATION DIRECTIVE:**
    - When asked for counts, totals, sums, rankings, averages, or filtered lists of projects/promoters/districts (e.g., total estimated cost of projects, count of active projects, highest cost developments), you MUST invoke the \`query_krera_sql_database\` tool.
    - NEVER hallucinate or guess aggregate sums or project counts from sparse vector text chunks.
-   - When presenting aggregated project data (like total costs or project lists), you MUST output a highly structured Markdown table containing the Project Name, PRM Number, District, Status, and Cost, followed by the calculated total.
+   - When presenting aggregated project data (like total costs or project lists), only output a structured Markdown table if the user explicitly requested multi-project aggregations. Do NOT generate developer portfolio tables for single-project inquiries.
+   - CRITICAL RULE: You are interacting with non-technical users. NEVER output, explain, or display raw SQL queries, database schema details, or your internal tool thought processes. If a query returns 0 rows or no results, respond naturally in plain English (e.g., 'I could not find any records for...') without showing the underlying SQL syntax used to search.
+   - **CRITICAL TABLE SELECTION & QUERY OVERRIDE:**
+     If the user's prompt asks for "docs", "documents", "NOC", "clearance", or "links", you are STRICTLY FORBIDDEN from only querying the main projects table. You MUST query the table that contains the actual file URLs (e.g., \`project_documents\`, \`documents\`, or your specific schema's equivalent) that holds the \`document_link\` column.
+
+     When searching for clearance links, you MUST use this exact structural pattern to defeat developer naming errors:
+     SELECT project_name, document_name, document_link 
+     FROM <your_documents_table> 
+     WHERE project_name ILIKE '%<target_project>%' 
+     AND (
+       document_name ILIKE '%airport%' 
+       OR document_name ILIKE '%aai%' 
+       OR document_name ILIKE '%noc%' 
+       OR document_name ILIKE '%clearance%'
+       OR document_name ILIKE '%fire%'
+       OR document_name ILIKE '%pollution%'
+     );
+   - **EXAMPLE FOR STATUTORY CLEARANCES:**
+     User: "provide height clearance docs for deansgate"
+     Generated SQL:
+     SELECT document_name, document_link 
+     FROM project_documents 
+     WHERE project_name ILIKE '%deansgate%' 
+       AND (
+         document_name ILIKE '%airport%' 
+         OR document_name ILIKE '%aai%' 
+         OR document_name ILIKE '%noc%'
+       );
+   - **CRITICAL SQL RULE FOR DOCUMENTS:**
+     You are strictly forbidden from placing multi-word strings inside an ILIKE clause. (e.g., NEVER write \`ILIKE '%height clearance%'\`).
+
+     If the user asks for ANY "clearance", "NOC", or "approval", you MUST use this exact structural block for your WHERE clause to catch misnamed developer files:
+     AND (
+       document_name ILIKE '%<single_keyword>%' 
+       OR document_name ILIKE '%airport%' 
+       OR document_name ILIKE '%noc%' 
+       OR document_name ILIKE '%aai%'
+     )
+ 7. **STRICT QUERY BOUNDING & SCOPE ADHERENCE:**
+   - Answer ONLY the specific entity, locality, or scope requested.
+   - Do NOT run broad brand searches (e.g., searching all projects under a promoter name) or generate developer portfolio tables unless the user explicitly requests promoter footprint or multi-project due diligence.
+   - If a specific project or development is asked about, focus exclusively on that project. Do not list other projects developed by the same promoter unless explicitly requested.
 
 ### RULES FOR CITATION AND GROUNDING:
 - Whenever referencing context from the retrieved documents, mention the document title, section, or case name clearly.
 - If the retrieved context does not contain sufficient details on a specific promoter or project, state what is known from statutory rules and advise on checking the official K-RERA portal (rera.karnataka.gov.in) with the project PRM registration number.
+- STRICT QUERY BOUNDING: Answer ONLY the specific entity, locality, or scope requested. Do NOT run broad brand searches (e.g., searching all projects under a promoter name) or generate developer portfolio tables unless the user explicitly requests promoter footprint or multi-project due diligence.
 - Use clear markdown formatting (tables, bullet points, bold statutory terms) to ensure maximum readability.
-- Maintain an objective, professional, and empathetic tone suitable for consumer rights and regulatory compliance.`;
+- Maintain an objective, professional, and empathetic tone suitable for consumer rights and regulatory compliance.
+- CRITICAL RULE: You are interacting with non-technical users. NEVER output, explain, or display raw SQL queries, database schema details, or your internal tool thought processes. If a query returns 0 rows or no results, respond naturally in plain English (e.g., 'I could not find any records for...') without showing the underlying SQL syntax used to search.
+
+### CONTEXTUAL FOLLOW-UP SUGGESTIONS DIRECTIVE:
+At the very end of your response, after the Statutory Advisory Disclaimer, provide exactly 2 to 3 highly relevant follow-up questions tailored to the specific project, promoter, or legal provisions discussed in this turn.
+Format them in a designated parseable block using this exact format:
+<!--SUGGESTIONS:[
+  "Question 1...",
+  "Question 2...",
+  "Question 3..."
+]-->
+Make each question concise, actionable, and continuing directly from the issues discussed. Do not include any text after this block.`;
 
 export function buildRAGPrompt(
   userQuery: string,
   retrievedContext: string,
   citations: CitationItem[]
 ): string {
+  const safeContext = retrievedContext && retrievedContext.trim().length > 0
+    ? retrievedContext
+    : 'No direct database match found. Please synthesize based on core RERA Act 2016 and Karnataka RERA Rules 2017 statutory provisions.';
+
+  const formattedCitations = Array.isArray(citations) && citations.length > 0
+    ? citations.map((c, i) => {
+        const ns = (c.namespace || 'GENERAL').toUpperCase();
+        const title = c.title || 'Statutory Record';
+        const section = c.section || 'General';
+        const scoreStr = typeof c.score === 'number' && !isNaN(c.score) ? (c.score * 100).toFixed(1) : '100.0';
+        const snippet = c.snippet || 'No excerpt available.';
+        return `[${i + 1}] [${ns}] ${title} (Section/Ref: ${section}, Relevance Score: ${scoreStr}%)\nContext Excerpt: ${snippet}`;
+      }).join('\n\n')
+    : 'No formal citations available in active retrieval snapshot.';
+
   return `### RETRIEVED K-RERA LEGAL & REGULATORY CONTEXT:
-${retrievedContext ? retrievedContext : 'No direct database match found. Please synthesize based on core RERA Act 2016 and Karnataka RERA Rules 2017 statutory provisions.'}
+${safeContext}
 
 ### RETRIEVED SOURCES & CITATIONS:
-${citations.map((c, i) => `[${i + 1}] [${c.namespace.toUpperCase()}] ${c.title} (Section/Ref: ${c.section || 'General'}, Relevance Score: ${(c.score * 100).toFixed(1)}%)
-Context Excerpt: ${c.snippet}`).join('\n\n')}
+${formattedCitations}
 
 ---
 
@@ -61,11 +128,19 @@ ${userQuery}
 Answer the user query comprehensively following the specialized K-RERA Advisory guidelines. Make direct reference to the retrieved statutory provisions, section numbers, judicial rulings, or project parameters detailed above.
 
 Adhere strictly to the data interpretation rules:
-1. Differentiate promoter-level portfolio complaints from project-level complaints.
-2. Do not confuse consumer complaints with civil court litigations (OS/Partition/Title).
-3. If no relevant records exist for the queried project in the retrieved context, state clearly: "There are no active [complaints/litigations] directly recorded for this project in the current database snapshot."
-4. Verbatim Reference Grounding: Extract all alphanumeric reference numbers (circulars, OMs, notifications, case numbers) verbatim from the retrieved context without synthesizing or extrapolating. If an exact reference number is absent, cite only the official title, issuing authority, and date.
-5. Document Link Rendering: When document link records are retrieved (from \`rera-links\`), format them as clean Markdown links \`[Document Name](URL)\` grouped by category. Never fabricate URLs; if missing, state that official document links are not available in the database snapshot for this project.
+1. STRICT QUERY BOUNDING: Answer ONLY the specific entity, locality, or scope requested. Do NOT run broad brand searches (e.g., searching all projects under a promoter name) or generate developer portfolio tables unless the user explicitly requests promoter footprint or multi-project due diligence.
+2. Differentiate promoter-level portfolio complaints from project-level complaints.
+3. Do not confuse consumer complaints with civil court litigations (OS/Partition/Title).
+4. If no relevant records exist for the queried project in the retrieved context, state clearly: "There are no active [complaints/litigations] directly recorded for this project in the current database snapshot."
+5. Verbatim Reference Grounding: Extract all alphanumeric reference numbers (circulars, OMs, notifications, case numbers) verbatim from the retrieved context without synthesizing or extrapolating. If an exact reference number is absent, cite only the official title, issuing authority, and date.
+6. Document Link Rendering: When document link records are retrieved (from \`rera-links\`), format them as clean Markdown links \`[Document Name](URL)\` grouped by category. Never fabricate URLs; if missing, state that official document links are not available in the database snapshot for this project.
+7. Anti-Leakage Guardrail: You are interacting with non-technical users. NEVER output, explain, or display raw SQL queries, database schema details, or your internal tool thought processes. If a query returns 0 rows or no results, respond naturally in plain English (e.g., 'I could not find any records for...') without showing the underlying SQL syntax used to search.
+8. Contextual Follow-Up Suggestions: At the very end of your response, provide exactly 2 to 3 highly relevant follow-up questions tailored to the specific project, promoter, or legal provisions discussed. Format them in a designated parseable block:
+<!--SUGGESTIONS:[
+  "Question 1...",
+  "Question 2...",
+  "Question 3..."
+]-->
 
 Format your response cleanly using markdown headings, bullet points, tables where appropriate, and bold highlights.`;
 }

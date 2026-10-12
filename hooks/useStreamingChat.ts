@@ -3,8 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Message, StreamStatus } from '@/types/chat';
 import { ReraNamespace } from '@/types/rera';
-import { generateId } from '@/lib/utils';
+import { generateId, extractSuggestionsFromContent } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface UseStreamingChatProps {
   activeConversationId: string | null;
@@ -13,6 +14,7 @@ interface UseStreamingChatProps {
   addMessageToConversation: (convId: string, msg: Message) => void;
   updateMessageInConversation: (convId: string, id: string, updater: (prev: Message) => Message) => void;
   createNewConsultation: (initialTitle?: string, namespaces?: ReraNamespace[]) => any;
+  user?: User | null;
 }
 
 export function useStreamingChat({
@@ -22,6 +24,7 @@ export function useStreamingChat({
   addMessageToConversation,
   updateMessageInConversation,
   createNewConsultation,
+  user,
 }: UseStreamingChatProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,10 +60,16 @@ export function useStreamingChat({
       content: string,
       selectedNamespaces?: ReraNamespace[],
       language: string = 'en-IN',
-      file?: File | null
+      file?: File | File[] | null
     ) => {
       const cleanContent = content.trim();
-      if (!cleanContent && !file) return;
+      const fileList: File[] = Array.isArray(file)
+        ? file
+        : file
+        ? [file]
+        : [];
+
+      if (!cleanContent && fileList.length === 0) return;
 
       // Strict lock: Prevent double-execution
       if (isSubmittingRef.current || isStreaming) {
@@ -73,88 +82,124 @@ export function useStreamingChat({
       setStreamError(null);
 
       // 1. Resolve exact target conversation ID synchronously
+      const defaultTitle =
+        cleanContent.slice(0, 35) ||
+        (fileList.length > 0
+          ? fileList.length === 1
+            ? `PDF: ${fileList[0].name.slice(0, 20)}`
+            : `PDFs (${fileList.length}): ${fileList[0].name.slice(0, 15)}...`
+          : 'New Consultation');
+
       const convId: string =
         activeIdRef.current ||
         activeConversationId ||
-        createNewConsultation(cleanContent.slice(0, 35) || (file ? `PDF: ${file.name.slice(0, 20)}` : 'New Consultation'), selectedNamespaces).id;
+        createNewConsultation(defaultTitle, selectedNamespaces).id;
 
-      // 2. Upload file to Supabase storage 'temp_documents' bucket if provided
+      // 2. Upload file(s) to Supabase storage 'temp_documents' bucket if provided
       let fileUrl: string | undefined = undefined;
-      if (file) {
-        setStatusText('Uploading temporary PDF document to secure storage...');
-        const fileExt = file.name.split('.').pop() || 'pdf';
-        const cleanBaseName = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-        const fileName = `${Date.now()}_${cleanBaseName}.${fileExt}`;
+      if (fileList.length > 0) {
+        setStatusText(
+          fileList.length === 1
+            ? 'Uploading temporary PDF document to secure storage...'
+            : `Uploading ${fileList.length} temporary PDF documents to secure storage...`
+        );
 
-        try {
-          const supabase = createClient();
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('temp_documents')
-            .upload(fileName, file, { cacheControl: '3600', upsert: true });
+        const uploadedUrls: string[] = [];
+        const supabase = createClient();
 
-          if (!uploadError && uploadData) {
-            const { data: pubData } = supabase.storage
-              .from('temp_documents')
-              .getPublicUrl(uploadData.path || fileName);
-            fileUrl = pubData?.publicUrl;
+        for (const f of fileList) {
+          const fileExt = f.name.split('.').pop() || 'pdf';
+          const cleanBaseName = f.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+          const fileName = `${Date.now()}_${cleanBaseName}.${fileExt}`;
+          let currentUrl: string | undefined = undefined;
 
-            if (!fileUrl) {
-              const { data: signedData } = await supabase.storage
-                .from('temp_documents')
-                .createSignedUrl(uploadData.path || fileName, 3600);
-              fileUrl = signedData?.signedUrl;
-            }
-          } else {
-            console.warn('Direct client upload issue, falling back to server upload route:', uploadError?.message);
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('fileName', fileName);
-            const fallbackRes = await fetch('/api/upload', {
-              method: 'POST',
-              body: formData,
-            });
-            if (fallbackRes.ok) {
-              const json = await fallbackRes.json();
-              fileUrl = json.fileUrl;
-            } else {
-              throw new Error(uploadError?.message || 'Storage upload failed.');
-            }
-          }
-        } catch (uploadErr: any) {
-          console.error('PDF upload encountered error, executing server-side upload fallback:', uploadErr);
           try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('fileName', fileName);
-            const fallbackRes = await fetch('/api/upload', {
-              method: 'POST',
-              body: formData,
-            });
-            if (fallbackRes.ok) {
-              const json = await fallbackRes.json();
-              fileUrl = json.fileUrl;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('temp_documents')
+              .upload(fileName, f, { cacheControl: '3600', upsert: true });
+
+            if (!uploadError && uploadData) {
+              const { data: pubData } = supabase.storage
+                .from('temp_documents')
+                .getPublicUrl(uploadData.path || fileName);
+              currentUrl = pubData?.publicUrl;
+
+              if (!currentUrl) {
+                const { data: signedData } = await supabase.storage
+                  .from('temp_documents')
+                  .createSignedUrl(uploadData.path || fileName, 3600);
+                currentUrl = signedData?.signedUrl;
+              }
             } else {
-              throw new Error(`Upload fallback failed: ${uploadErr.message}`);
+              console.warn('Direct client upload issue, falling back to server upload route:', uploadError?.message);
+              const formData = new FormData();
+              formData.append('file', f);
+              formData.append('fileName', fileName);
+              const fallbackRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+              });
+              if (fallbackRes.ok) {
+                const json = await fallbackRes.json();
+                currentUrl = json.fileUrl;
+              } else {
+                throw new Error(uploadError?.message || 'Storage upload failed.');
+              }
             }
-          } catch (finalErr: any) {
-            console.error('All upload attempts failed:', finalErr);
-            setStreamError(`Failed to upload PDF: ${finalErr.message}`);
-            isSubmittingRef.current = false;
-            setIsSubmitting(false);
-            return;
+          } catch (uploadErr: any) {
+            console.error('PDF upload encountered error, executing server-side upload fallback:', uploadErr);
+            try {
+              const formData = new FormData();
+              formData.append('file', f);
+              formData.append('fileName', fileName);
+              const fallbackRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+              });
+              if (fallbackRes.ok) {
+                const json = await fallbackRes.json();
+                currentUrl = json.fileUrl;
+              } else {
+                throw new Error(`Upload fallback failed: ${uploadErr.message}`);
+              }
+            } catch (finalErr: any) {
+              console.error('All upload attempts failed for file:', f.name, finalErr);
+            }
           }
+
+          if (currentUrl) {
+            uploadedUrls.push(currentUrl);
+          }
+        }
+
+        if (uploadedUrls.length > 0) {
+          fileUrl = uploadedUrls[0];
+        } else {
+          setStreamError('Failed to upload PDF documents.');
+          isSubmittingRef.current = false;
+          setIsSubmitting(false);
+          return;
         }
       }
 
       // 3. Create and add User Message
       const userMessageId = generateId('user');
+      const fileNamesStr = fileList.map((f) => f.name).join(', ');
       const userMessage: Message = {
         id: userMessageId,
         role: 'user',
-        content: cleanContent || (file ? `[Attached PDF for analysis: ${file.name}]` : ''),
+        content:
+          cleanContent ||
+          (fileList.length > 0
+            ? `[Attached ${fileList.length > 1 ? `${fileList.length} PDFs` : 'PDF'} for analysis: ${fileNamesStr}]`
+            : ''),
         timestamp: Date.now(),
         status: 'done',
-        fileName: file?.name,
+        fileName: fileList.length > 0 ? fileNamesStr : undefined,
+        attachments: fileList.map((f) => ({
+          name: f.name,
+          size: f.size,
+        })),
         fileUrl: fileUrl,
       };
       addMessageToConversation(convId, userMessage);
@@ -165,15 +210,22 @@ export function useStreamingChat({
         id: assistantMessageId,
         role: 'assistant',
         content: '',
-        timestamp: Date.now(),
+        timestamp: Date.now() + 1,
         status: 'routing',
         citations: [],
         routedNamespaces: [],
+        suggestions: [],
       };
       addMessageToConversation(convId, initialAssistantMessage);
 
       setIsStreaming(true);
-      setStatusText(fileUrl ? 'Analyzing PDF contents with Gemini 3.5 Flash...' : 'Analyzing query and consulting K-RERA database...');
+      setStatusText(
+        fileUrl
+          ? fileList.length > 1
+            ? `Analyzing ${fileList.length} PDF documents with Gemini 3.5 Flash...`
+            : 'Analyzing PDF contents with Gemini 3.5 Flash...'
+          : 'Analyzing query and consulting K-RERA database...'
+      );
 
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
@@ -184,19 +236,45 @@ export function useStreamingChat({
           .map((m) => ({ role: m.role, content: m.content }))
           .filter((m) => m.role === 'user' || m.role === 'assistant');
 
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
+        let requestBody: BodyInit;
+        let requestHeaders: Record<string, string> | undefined = undefined;
+
+        if (fileList.length > 0) {
+          const formData = new FormData();
+          formData.append('message', cleanContent);
+          formData.append('messages', JSON.stringify(historyForApi));
+          formData.append('language', language || 'en-IN');
+          if (selectedNamespaces && selectedNamespaces.length > 0) {
+            formData.append('namespaces', JSON.stringify(selectedNamespaces));
+          }
+          formData.append('conversationId', convId);
+          if (fileUrl) {
+            formData.append('fileUrl', fileUrl);
+          }
+
+          fileList.forEach((file) => {
+            formData.append('files', file);
+          });
+
+          requestBody = formData;
+        } else {
+          requestHeaders = {
             'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+          };
+          requestBody = JSON.stringify({
             messages: historyForApi,
             message: cleanContent,
             fileUrl: fileUrl,
             conversationId: convId,
             namespaces: selectedNamespaces,
             language: language || 'en-IN',
-          }),
+          });
+        }
+
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: requestHeaders,
+          body: requestBody,
           signal: abortController.signal,
         });
 
@@ -212,6 +290,10 @@ export function useStreamingChat({
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let accumulatedText = '';
+        let accumulatedCitations: any[] = [];
+        let accumulatedNamespaces: any[] = [];
+        let accumulatedSuggestions: string[] = [];
 
         while (true) {
           const { done, value } = await reader.read();
@@ -268,41 +350,106 @@ export function useStreamingChat({
                 setStatusText(eventData.statusText);
               }
             } else if (eventType === 'routing') {
+              accumulatedNamespaces = eventData.routedNamespaces || [];
               updateMessageInConversation(convId, assistantMessageId, (prev) => ({
                 ...prev,
                 status: 'retrieving',
-                routedNamespaces: eventData.routedNamespaces || [],
+                routedNamespaces: accumulatedNamespaces,
               }));
-              setStatusText(`Retrieving from namespaces: ${(eventData.routedNamespaces || []).join(', ')}`);
+              setStatusText(`Retrieving from namespaces: ${accumulatedNamespaces.join(', ')}`);
             } else if (eventType === 'citations') {
+              accumulatedCitations = eventData.citations || [];
               updateMessageInConversation(convId, assistantMessageId, (prev) => ({
                 ...prev,
-                citations: eventData.citations || [],
+                citations: accumulatedCitations,
+              }));
+            } else if (eventType === 'suggestions') {
+              accumulatedSuggestions = eventData.suggestions || [];
+              updateMessageInConversation(convId, assistantMessageId, (prev) => ({
+                ...prev,
+                suggestions: accumulatedSuggestions,
               }));
             } else if (eventType === 'token') {
               const chunk = eventData.text || '';
-              updateMessageInConversation(convId, assistantMessageId, (prev) => ({
-                ...prev,
-                status: 'generating',
-                content: prev.content + chunk,
-              }));
-              setStatusText('');
+              if (chunk) {
+                accumulatedText += chunk;
+                const { cleanContent: cleanStreamText, suggestions } = extractSuggestionsFromContent(accumulatedText);
+                if (suggestions.length > 0 && accumulatedSuggestions.length === 0) {
+                  accumulatedSuggestions = suggestions;
+                }
+                updateMessageInConversation(convId, assistantMessageId, (prev) => ({
+                  ...prev,
+                  status: 'generating',
+                  content: cleanStreamText,
+                  suggestions: accumulatedSuggestions.length > 0 ? accumulatedSuggestions : prev.suggestions,
+                }));
+                setStatusText('');
+              }
             } else if (eventType === 'done') {
+              const { cleanContent: cleanDoneText, suggestions } = extractSuggestionsFromContent(accumulatedText);
+              const finalSuggestions = accumulatedSuggestions.length > 0 ? accumulatedSuggestions : suggestions;
               updateMessageInConversation(convId, assistantMessageId, (prev) => ({
                 ...prev,
+                content: cleanDoneText.trim() ? cleanDoneText : prev.content,
+                citations: accumulatedCitations.length > 0 ? accumulatedCitations : prev.citations,
+                routedNamespaces: accumulatedNamespaces.length > 0 ? accumulatedNamespaces : prev.routedNamespaces,
+                suggestions: finalSuggestions.length > 0 ? finalSuggestions : prev.suggestions,
                 status: 'done',
               }));
             }
           }
         }
 
-        // Finalize status to done if not in error state
+        // Finalize status to done with accumulatedText if not in error state
+        const { cleanContent: cleanFinalText, suggestions } = extractSuggestionsFromContent(accumulatedText);
+        const finalSuggestions = accumulatedSuggestions.length > 0 ? accumulatedSuggestions : suggestions;
+        const finalContent = cleanFinalText.trim() || undefined;
+
         updateMessageInConversation(convId, assistantMessageId, (prev) => {
           if (prev.status !== 'error') {
-            return { ...prev, status: 'done' };
+            return {
+              ...prev,
+              content: finalContent || prev.content,
+              citations: accumulatedCitations.length > 0 ? accumulatedCitations : prev.citations,
+              routedNamespaces: accumulatedNamespaces.length > 0 ? accumulatedNamespaces : prev.routedNamespaces,
+              suggestions: finalSuggestions.length > 0 ? finalSuggestions : prev.suggestions,
+              status: 'done',
+            };
           }
           return prev;
         });
+
+        // Direct database upsert to guarantee Supabase stores the completed content with suggestions
+        if (user && finalContent) {
+          try {
+            const supabase = createClient();
+            const contentToPersist =
+              finalSuggestions.length > 0
+                ? `${finalContent}\n\n<!--SUGGESTIONS:${JSON.stringify(finalSuggestions)}-->`
+                : finalContent;
+            supabase
+              .from('messages')
+              .upsert({
+                id: assistantMessageId,
+                consultation_id: convId,
+                user_id: user.id,
+                role: 'assistant',
+                content: contentToPersist,
+                status: 'done',
+                citations: accumulatedCitations,
+                routed_namespaces: accumulatedNamespaces,
+                created_at: new Date().toISOString(),
+              })
+              .then(
+                ({ error }) => {
+                  if (error) console.warn('Direct Supabase message save notice:', error.message);
+                },
+                (err: any) => console.warn('Direct Supabase message save error:', err)
+              );
+          } catch (syncErr) {
+            console.warn('Supabase direct sync exception:', syncErr);
+          }
+        }
       } catch (err: any) {
         if (err.name === 'AbortError') {
           console.log('Stream generation aborted by user.');
@@ -332,6 +479,7 @@ export function useStreamingChat({
       addMessageToConversation,
       updateMessageInConversation,
       createNewConsultation,
+      user,
     ]
   );
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useStreamingChat } from '@/hooks/useStreamingChat';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -10,6 +10,11 @@ import { ChatInput } from '@/components/chat/ChatInput';
 
 export default function ChatPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [prefilledPrompt, setPrefilledPrompt] = useState<{ text: string; id: number } | null>(null);
+
+  const handleSelectPrompt = useCallback((prompt: string) => {
+    setPrefilledPrompt({ text: prompt, id: Date.now() });
+  }, []);
 
   // Restore sidebar state from localStorage on mount (prevents SSR hydration mismatch)
   useEffect(() => {
@@ -61,6 +66,16 @@ export default function ChatPage() {
     updateMessageInConversation,
   } = useChatSession();
 
+  // If ?id= is present in URL (e.g., from forking a consultation), select it
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const targetId = params.get('id');
+    if (targetId && conversations.some((c) => c.id === targetId)) {
+      selectConversation(targetId);
+    }
+  }, [conversations, selectConversation]);
+
   const messages = activeConversation?.messages || [];
 
   const {
@@ -76,10 +91,11 @@ export default function ChatPage() {
     addMessageToConversation,
     updateMessageInConversation,
     createNewConsultation,
+    user,
   });
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-black text-white font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-neutral-300 text-neutral-900 font-sans">
       {/* Collapsible Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -95,31 +111,35 @@ export default function ChatPage() {
       />
 
       {/* Main Workspace Container */}
-      <div className="flex-1 w-full min-w-0 flex flex-col h-screen overflow-hidden bg-black">
+      <div className="flex-1 w-full min-w-0 flex flex-col h-screen overflow-hidden bg-neutral-300">
         {/* Top Header */}
         <Header
           onToggleSidebar={handleToggleSidebar}
           onNewConsultation={createNewConsultation}
           isSidebarOpen={isSidebarOpen}
+          activeConversationId={activeConversationId}
+          hasMessages={messages.length > 0}
         />
 
         {/* Chat Feed Area */}
-        <main className="flex-1 w-full min-w-0 flex flex-col min-h-0 overflow-hidden relative bg-black">
+        <main className="flex-1 w-full min-w-0 flex flex-col min-h-0 overflow-hidden relative bg-neutral-300">
           <ChatArea
             messages={messages}
             onSendMessage={sendMessage}
             isStreaming={isStreaming}
+            onSelectPrompt={handleSelectPrompt}
           />
         </main>
 
         {/* Floating Input Bar */}
-        <footer className="w-full flex-shrink-0 bg-gradient-to-t from-black via-black/95 to-transparent backdrop-blur-xl pt-2 border-t border-white/10">
+        <footer className="w-full flex-shrink-0 bg-gradient-to-t from-neutral-300 via-neutral-300/95 to-transparent backdrop-blur-xl pt-2 border-t border-neutral-400">
           <ChatInput
             onSendMessage={sendMessage}
             onStop={stopGeneration}
             isStreaming={isStreaming}
             isSubmitting={isSubmitting}
             statusText={statusText}
+            prefilledPrompt={prefilledPrompt}
           />
         </footer>
       </div>

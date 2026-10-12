@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import zlib from 'zlib';
 import { getGeminiClient, GEMINI_CHAT_MODEL, GEMINI_FALLBACK_MODEL } from '@/lib/gemini';
 import { executeRAGRetrieval } from '@/lib/rag/engine';
 import { buildRAGPrompt, KRERA_SYSTEM_PROMPT } from '@/lib/rag/prompts';
@@ -9,10 +10,98 @@ import { ChatRequestPayload } from '@/types/chat';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+function extractTextFromPdfBuffer(buffer: Buffer): string {
+  try {
+    const content = buffer.toString('binary');
+    const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+    let extractedText = '';
+    let match: RegExpExecArray | null;
+
+    while ((match = streamRegex.exec(content)) !== null) {
+      const rawStream = Buffer.from(match[1], 'binary');
+      let decompressed = '';
+      try {
+        decompressed = zlib.inflateSync(rawStream).toString('utf-8');
+      } catch {
+        try {
+          decompressed = zlib.inflateRawSync(rawStream).toString('utf-8');
+        } catch {
+          decompressed = rawStream.toString('utf-8');
+        }
+      }
+
+      // Extract Tj strings: (text) Tj
+      const textMatches = decompressed.match(/\(([^)]+)\)\s*Tj/g) || [];
+      for (const tm of textMatches) {
+        const clean = tm.replace(/^\(/, '').replace(/\)\s*Tj$/, '');
+        extractedText += clean + ' ';
+      }
+
+      // Extract TJ array strings: [(text) 10 (text)] TJ
+      const tjArrayMatches = decompressed.match(/\[(.*?)\]\s*TJ/g) || [];
+      for (const tm of tjArrayMatches) {
+        const innerStrings = tm.match(/\(([^)]+)\)/g) || [];
+        for (const is of innerStrings) {
+          extractedText += is.slice(1, -1) + ' ';
+        }
+      }
+
+      if (extractedText.length > 12000) break;
+    }
+
+    return extractedText.replace(/\s+/g, ' ').trim();
+  } catch (err) {
+    console.warn('PDF text extraction notice:', err);
+    return '';
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body: ChatRequestPayload = await req.json();
-    const { messages, message, namespaces, language = 'en-IN', fileUrl } = body;
+    const contentType = req.headers.get('content-type') || '';
+    let messageList: any[] = [];
+    let message = '';
+    let namespaces: any = undefined;
+    let language = 'en-IN';
+    let fileUrl: string | undefined = undefined;
+    let fileUrls: string[] = [];
+    let files: File[] = [];
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      files = formData.getAll('files') as File[];
+      if (files.length === 0) {
+        const singleFile = formData.get('file') as File | null;
+        if (singleFile) files = [singleFile];
+      }
+
+      const rawMessages = formData.get('messages') as string | null;
+      if (rawMessages) {
+        try {
+          messageList = JSON.parse(rawMessages);
+        } catch {
+          messageList = [];
+        }
+      }
+
+      message = (formData.get('message') as string) || '';
+      const rawNamespaces = formData.get('namespaces') as string | null;
+      if (rawNamespaces) {
+        try {
+          namespaces = JSON.parse(rawNamespaces);
+        } catch {}
+      }
+      language = (formData.get('language') as string) || 'en-IN';
+      fileUrl = (formData.get('fileUrl') as string) || undefined;
+    } else {
+      const body: ChatRequestPayload = await req.json();
+      messageList = body.messages || [];
+      message = body.message || '';
+      namespaces = body.namespaces;
+      language = body.language || 'en-IN';
+      fileUrl = body.fileUrl;
+      fileUrls = body.fileUrls || (fileUrl ? [fileUrl] : []);
+    }
 
     // Formulate Statutory Language Directive based on selected consultation language
     let languageLabel = 'English';
@@ -24,10 +113,10 @@ export async function POST(req: NextRequest) {
 
     const languageInstruction = getStatutoryLexiconDirective(language);
 
-    let messageList = messages;
+    const hasFiles = files.length > 0 || Boolean(fileUrl) || fileUrls.length > 0;
     if (!messageList || !Array.isArray(messageList) || messageList.length === 0) {
-      if (message || fileUrl) {
-        messageList = [{ role: 'user', content: message || 'Please analyze the attached PDF document and extract statutory findings.' }];
+      if (message || hasFiles) {
+        messageList = [{ role: 'user', content: message || 'Please analyze the attached PDF documents and extract statutory findings.' }];
       } else {
         return new Response(JSON.stringify({ type: 'error', message: 'Messages array or message is required.' }), {
           status: 400,
@@ -37,7 +126,16 @@ export async function POST(req: NextRequest) {
     }
 
     const latestUserMessage = [...messageList].reverse().find((m) => m.role === 'user');
-    const userQuery = message || latestUserMessage?.content || (fileUrl ? 'Analyze attached document under K-RERA provisions' : 'Explain K-RERA provisions');
+    let userQuery = message || latestUserMessage?.content || (hasFiles ? 'Analyze attached document(s) under K-RERA provisions' : 'Explain K-RERA provisions');
+
+    // Code-Level Fallback (Deterministic Protection):
+    // In the function that receives the user query before sending it to the SQL generator,
+    // if the query contains "height" or "clearance", ensure keyword expansion appends "airport" and "aai"
+    if (/\b(height|clearance)\b/i.test(userQuery)) {
+      if (!/\bairport\b/i.test(userQuery) && !/\baai\b/i.test(userQuery)) {
+        userQuery = `${userQuery} airport aai`;
+      }
+    }
 
     const encoder = new TextEncoder();
 
@@ -66,27 +164,82 @@ export async function POST(req: NextRequest) {
         };
 
         try {
-          // If fileUrl is attached, fetch and convert PDF to Base64 for multimodal analysis
-          let inlinePdfPart: { inlineData: { data: string; mimeType: string } } | null = null;
-          if (fileUrl) {
-            safeSend('status', { statusText: 'Fetching attached PDF document for multimodal analysis...' });
-            try {
-              const pdfRes = await fetch(fileUrl);
-              if (pdfRes.ok) {
-                const arrayBuffer = await pdfRes.arrayBuffer();
-                const base64Data = Buffer.from(arrayBuffer).toString('base64');
-                inlinePdfPart = {
+          // Process attached PDF files into base64 inline parts and extracted text
+          const inlinePdfParts: { inlineData: { data: string; mimeType: string } }[] = [];
+          const documentSections: string[] = [];
+
+          if (files.length > 0) {
+            safeSend('status', {
+              statusText: files.length === 1
+                ? 'Processing attached PDF document for multimodal analysis...'
+                : `Processing ${files.length} attached PDF documents for multimodal comparative analysis...`,
+            });
+
+            for (let idx = 0; idx < files.length; idx++) {
+              const file = files[idx];
+              try {
+                const arrayBuffer = await file.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const base64Data = buffer.toString('base64');
+
+                inlinePdfParts.push({
                   inlineData: {
                     data: base64Data,
-                    mimeType: 'application/pdf',
+                    mimeType: file.type || 'application/pdf',
                   },
-                };
-                safeSend('status', { statusText: 'PDF loaded. Analyzing multimodal document with Gemini 3.5 Flash...' });
-              } else {
-                console.warn(`Failed to fetch PDF from ${fileUrl}: ${pdfRes.statusText}`);
+                });
+
+                const extracted = extractTextFromPdfBuffer(buffer);
+                const preview = extracted ? extracted.slice(0, 4000) : '';
+
+                documentSections.push(
+                  `--- DOCUMENT ${idx + 1}: ${file.name} (Size: ${(file.size / 1024).toFixed(1)} KB) ---\n` +
+                  (preview
+                    ? `[Extracted Text Content]:\n${preview}\n\n[Multimodal visual PDF part attached for diagram/table inspection]`
+                    : `[Scanned/Visual PDF document - Full layout, tables, approvals, and handwritten text attached as native multimodal inline PDF part for inspection]`)
+                );
+              } catch (fileErr: any) {
+                console.error(`Error processing attached file ${file.name}:`, fileErr);
+                documentSections.push(`--- DOCUMENT ${idx + 1}: ${file.name} ---\n[Error reading document: ${fileErr.message}]`);
               }
-            } catch (pdfErr: any) {
-              console.error('Error fetching PDF from fileUrl:', pdfErr);
+            }
+
+            safeSend('status', {
+              statusText: `${files.length} document(s) loaded. Analyzing multimodal contents with Gemini 3.5 Flash...`,
+            });
+          } else if (fileUrls.length > 0 || fileUrl) {
+            const urlsToFetch = fileUrls.length > 0 ? fileUrls : fileUrl ? [fileUrl] : [];
+            safeSend('status', { statusText: 'Fetching attached PDF document(s) for multimodal analysis...' });
+
+            for (let idx = 0; idx < urlsToFetch.length; idx++) {
+              const url = urlsToFetch[idx];
+              try {
+                const pdfRes = await fetch(url);
+                if (pdfRes.ok) {
+                  const arrayBuffer = await pdfRes.arrayBuffer();
+                  const buffer = Buffer.from(arrayBuffer);
+                  const base64Data = buffer.toString('base64');
+                  inlinePdfParts.push({
+                    inlineData: {
+                      data: base64Data,
+                      mimeType: 'application/pdf',
+                    },
+                  });
+
+                  const fileName = url.split('/').pop()?.split('?')[0] || `document_${idx + 1}.pdf`;
+                  const extracted = extractTextFromPdfBuffer(buffer);
+                  const preview = extracted ? extracted.slice(0, 4000) : '';
+
+                  documentSections.push(
+                    `--- DOCUMENT ${idx + 1}: ${fileName} ---\n` +
+                    (preview
+                      ? `[Extracted Text Content]:\n${preview}\n\n[Multimodal visual PDF part attached for inspection]`
+                      : `[Visual/Scanned PDF document attached as native multimodal inline PDF part for inspection]`)
+                  );
+                }
+              } catch (urlErr) {
+                console.error(`Error fetching PDF from URL ${url}:`, urlErr);
+              }
             }
           }
 
@@ -117,9 +270,19 @@ export async function POST(req: NextRequest) {
 
           // 5. LLM Generation & Streaming with Text-to-SQL tool capability
           const gemini = getGeminiClient();
-          const multimodalDirective = inlinePdfPart
-            ? '\n\n### MULTIMODAL PDF DOCUMENT INSTRUCTIONS:\nA PDF document is attached as an inline part. Natively inspect all typed text, scanned handwriting, stamps, tables, approvals, dates, and schedules in the PDF to address the user query with statutory accuracy in the requested language.'
-            : '';
+          let multimodalDirective = '';
+          if (inlinePdfParts.length > 0) {
+            const combinedDocs = documentSections.join('\n\n');
+            multimodalDirective = `\n\n### ATTACHED PDF DOCUMENTS FOR MULTI-DOCUMENT ANALYSIS (${inlinePdfParts.length} Document${inlinePdfParts.length > 1 ? 's' : ''}):
+${combinedDocs}
+
+### MULTIMODAL MULTI-DOCUMENT COMPARATIVE ANALYSIS DIRECTIVE:
+1. The user has attached ${inlinePdfParts.length} PDF document(s). Each document is provided above with explicit boundaries and as native multimodal inline PDF parts in sequential order.
+2. Inspect, analyze, and compare ALL provided documents thoroughly (e.g., cross-referencing sanction terms, structural elevations, AMSL/PSML heights, approved floor plans, execution dates, parties, and statutory covenants across each document).
+3. Explicitly reference and differentiate each document by its filename or Document number (e.g., "Document 1: ...", "Document 2: ...") in your comparative analysis.
+4. Highlight any discrepancies, deviations, conflicting dates, unapproved alterations, or regulatory compliance failures between the documents under RERA Act 2016 and K-RERA regulations.`;
+          }
+
           const ragPrompt = buildRAGPrompt(userQuery, ragResult.combinedContext, ragResult.citations) + multimodalDirective + (languageInstruction ? `\n\n${languageInstruction}` : '');
 
           let streamCompleted = false;
@@ -127,10 +290,12 @@ export async function POST(req: NextRequest) {
           if (gemini) {
             // Models to try in cascade
             const candidateModels = [
-              'gemini-3.5-flash',
               GEMINI_CHAT_MODEL,
+              'gemini-3.5-flash',
               GEMINI_FALLBACK_MODEL,
-            ];
+              'gemini-1.5-flash',
+              'gemini-1.5-pro',
+            ].filter(Boolean);
 
             const isSqlNamespaceTriggered = ragResult.routedNamespaces.includes('supabase-sql');
             const triedModels = new Set<string>();
@@ -143,7 +308,7 @@ export async function POST(req: NextRequest) {
                 // Initialize model with Text-to-SQL function declaration
                 const model = gemini.getGenerativeModel({
                   model: modelName,
-                  systemInstruction: KRERA_SYSTEM_PROMPT + languageInstruction,
+                  systemInstruction: KRERA_SYSTEM_PROMPT + (languageInstruction ? `\n\n${languageInstruction}` : ''),
                   tools: [KRERA_SQL_TOOL as any],
                   toolConfig: isSqlNamespaceTriggered
                     ? {
@@ -156,7 +321,11 @@ export async function POST(req: NextRequest) {
                 });
 
                 const contents = [];
-                const history = messageList.slice(0, -1).slice(-4);
+                const history = messageList
+                  .slice(0, -1)
+                  .slice(-4)
+                  .filter((msg) => typeof msg.content === 'string' && msg.content.trim().length > 0);
+
                 for (const msg of history) {
                   contents.push({
                     role: msg.role === 'user' ? 'user' : 'model',
@@ -165,15 +334,20 @@ export async function POST(req: NextRequest) {
                 }
 
                 const userParts: any[] = [];
-                if (inlinePdfPart) {
-                  userParts.push(inlinePdfPart);
+                for (const part of inlinePdfParts) {
+                  userParts.push(part);
                 }
-                userParts.push({ text: ragPrompt });
+                const validPromptText = typeof ragPrompt === 'string' && ragPrompt.trim().length > 0
+                  ? ragPrompt
+                  : (userQuery || 'Explain K-RERA provisions');
+                userParts.push({ text: validPromptText });
 
                 contents.push({
                   role: 'user',
                   parts: userParts,
                 });
+
+                let tokensEmitted = 0;
 
                 // Check if the model requests a Text-to-SQL tool call
                 const initialResponse = await model.generateContent({ contents });
@@ -184,6 +358,7 @@ export async function POST(req: NextRequest) {
 
                   if (call.name === 'query_krera_sql_database') {
                     const sqlQuery = (call.args as any).sql_query;
+                    console.log('[DEBUG SQL GENERATED]:', sqlQuery);
                     safeSend('status', {
                       statusText: 'Executing statistical database query on PostgreSQL...',
                     });
@@ -191,26 +366,29 @@ export async function POST(req: NextRequest) {
                     const sqlResult = await runAgenticSql(sqlQuery);
 
                     // Synthesize final response using SQL results
-                    const sqlSynthesisPrompt = `${ragPrompt}
+                    const sqlSynthesisPrompt = `${validPromptText}
 
 ### DATABASE STATISTICAL QUERY EXECUTION:
 SQL Executed:
 \`\`\`sql
-${sqlResult.sql}
+${sqlResult.sql || ''}
 \`\`\`
 
 Query Results (${sqlResult.rowCount || 0} rows):
 \`\`\`json
-${JSON.stringify(sqlResult.data || sqlResult.error, null, 2)}
+${JSON.stringify(sqlResult.data && Array.isArray(sqlResult.data) && sqlResult.data.length > 0 ? sqlResult.data : sqlResult.error ? { error: sqlResult.error } : [], null, 2)}
 \`\`\`
 
 INSTRUCTIONS:
 Synthesize an authoritative, highly detailed response answering the user query using the database query results above alongside any relevant retrieved K-RERA regulatory provisions.
-When presenting aggregated project data (like total costs or project lists), you MUST output a highly structured Markdown table containing the Project Name, PRM Number, District, Status, and Cost, followed by the calculated total.`;
+STRICT QUERY BOUNDING: Answer ONLY the specific entity, locality, or scope requested. Do NOT run broad brand searches (e.g., searching all projects under a promoter name) or generate developer portfolio tables unless the user explicitly requests promoter footprint or multi-project due diligence.
+When presenting multi-project aggregated data requested by the user (like total costs across a district or an explicit portfolio review), output a highly structured Markdown table containing the Project Name, PRM Number, District, Status, and Cost, followed by the calculated total.
+CRITICAL RULE: You are interacting with non-technical users. NEVER output, explain, or display raw SQL queries, database schema details, or your internal tool thought processes. If a query returns 0 rows or no results, respond naturally in plain English (e.g., 'I could not find any records for...') without showing the underlying SQL syntax used to search.
+At the very end of your response, provide exactly 2 to 3 contextual follow-up questions formatted in a designated parseable block: <!--SUGGESTIONS:[ "Question 1...", "Question 2...", "Question 3..." ]-->`;
 
                     const streamModel = gemini.getGenerativeModel({
                       model: modelName,
-                      systemInstruction: KRERA_SYSTEM_PROMPT + languageInstruction,
+                      systemInstruction: KRERA_SYSTEM_PROMPT + (languageInstruction ? `\n\n${languageInstruction}` : ''),
                     });
 
                     const finalStream = await streamModel.generateContentStream({
@@ -218,55 +396,91 @@ When presenting aggregated project data (like total costs or project lists), you
                         ...contents.slice(0, -1),
                         {
                           role: 'user',
-                          parts: inlinePdfPart
-                            ? [inlinePdfPart, { text: sqlSynthesisPrompt }]
-                            : [{ text: sqlSynthesisPrompt }],
+                          parts: [
+                            ...inlinePdfParts,
+                            { text: sqlSynthesisPrompt },
+                          ],
                         },
                       ],
                     });
 
                     for await (const chunk of finalStream.stream) {
-                      const text = chunk.text();
+                      let text = '';
+                      try {
+                        text = chunk.text();
+                      } catch {}
                       if (text) {
                         safeSend('token', { text });
+                        tokensEmitted++;
                       }
                     }
 
-                    streamCompleted = true;
-                    break;
+                    if (tokensEmitted > 0) {
+                      streamCompleted = true;
+                      break;
+                    }
                   }
                 }
 
-                // If no function call was needed, stream directly
+                // If no function call was executed or needed, stream response directly
                 const streamModel = gemini.getGenerativeModel({
                   model: modelName,
-                  systemInstruction: KRERA_SYSTEM_PROMPT + languageInstruction,
+                  systemInstruction: KRERA_SYSTEM_PROMPT + (languageInstruction ? `\n\n${languageInstruction}` : ''),
                 });
 
-                const resultStream = await streamModel.generateContentStream({ contents });
+                try {
+                  const resultStream = await streamModel.generateContentStream({ contents });
+                  for await (const chunk of resultStream.stream) {
+                    let text = '';
+                    try {
+                      text = chunk.text();
+                    } catch {}
+                    if (text) {
+                      safeSend('token', { text });
+                      tokensEmitted++;
+                    }
+                  }
+                } catch (streamErr: any) {
+                  console.warn(`generateContentStream for '${modelName}' encountered an issue:`, streamErr.message || streamErr);
+                }
 
-                for await (const chunk of resultStream.stream) {
-                  const text = chunk.text();
-                  if (text) {
-                    safeSend('token', { text });
+                // If stream emitted 0 tokens but initialResponse already captured valid content, dispatch in streaming chunks
+                if (tokensEmitted === 0) {
+                  try {
+                    const fallbackModelText = initialResponse.response.text();
+                    if (fallbackModelText && fallbackModelText.trim().length > 0) {
+                      const chunkSize = 35;
+                      for (let i = 0; i < fallbackModelText.length; i += chunkSize) {
+                        safeSend('token', { text: fallbackModelText.slice(i, i + chunkSize) });
+                        tokensEmitted++;
+                        await new Promise((r) => setTimeout(r, 8));
+                      }
+                    }
+                  } catch (textExtractionErr: any) {
+                    console.warn(`Could not extract fallback text from initialResponse on '${modelName}':`, textExtractionErr.message || textExtractionErr);
                   }
                 }
 
-                streamCompleted = true;
-                break;
+                if (tokensEmitted > 0) {
+                  streamCompleted = true;
+                  break;
+                }
               } catch (modelErr: any) {
-                console.warn(`Model '${modelName}' stream failed, trying next candidate:`, modelErr.message || modelErr);
+                console.error(`Model '${modelName}' stream failed, trying next candidate:`, modelErr.message || modelErr);
               }
             }
           }
 
           // If LLM streaming was not completed via API, stream structured synthesized response
           if (!streamCompleted) {
+            console.warn('LLM cascade yielded 0 tokens. Emitting verified statutory fallback response...');
             const synthesizedAnswer = generateFallbackLegalResponse(userQuery, ragResult, language);
-            const chunkSize = 25;
-            for (let i = 0; i < synthesizedAnswer.length; i += chunkSize) {
-              safeSend('token', { text: synthesizedAnswer.slice(i, i + chunkSize) });
-              await new Promise((r) => setTimeout(r, 12));
+            if (synthesizedAnswer && synthesizedAnswer.trim().length > 0) {
+              const chunkSize = 25;
+              for (let i = 0; i < synthesizedAnswer.length; i += chunkSize) {
+                safeSend('token', { text: synthesizedAnswer.slice(i, i + chunkSize) });
+                await new Promise((r) => setTimeout(r, 12));
+              }
             }
           }
 
@@ -307,9 +521,9 @@ When presenting aggregated project data (like total costs or project lists), you
 }
 
 // Fallback high-quality response builder grounded strictly on retrieved legal citations and statutory vernacular
-function generateFallbackLegalResponse(query: string, ragResult: any, language: string = 'en-IN'): string {
+function generateFallbackLegalResponse(query: string = '', ragResult: any = {}, language: string = 'en-IN'): string {
   const topCitation = ragResult?.citations?.[0];
-  const qLower = query.toLowerCase();
+  const qLower = (query || '').toLowerCase();
   const isKannada = language === 'kn-IN' || language === 'kn';
   const isHindi = language === 'hi-IN' || language === 'hi';
 
@@ -558,5 +772,47 @@ function generateFallbackLegalResponse(query: string, ragResult: any, language: 
     response += `> **Legal Advisory Disclaimer**: This analysis is generated by the REAA Advisory AI Agent based on the RERA Act 2016, Karnataka RERA Rules 2017, and statutory case law. For formal court representation, please consult an advocate practicing before the Karnataka Real Estate Regulatory Authority.`;
   }
 
+  const fallbackSuggestions: string[] = [];
+  if (isDelayQuery) {
+    fallbackSuggestions.push(
+      'How do I calculate the exact SBI MCLR + 2% delay interest formula for my payments?',
+      'What is the step-by-step procedure to file Form M before K-RERA?',
+      'Can the promoter force me to accept possession without a valid Occupancy Certificate (OC)?'
+    );
+  } else if (isDefectQuery) {
+    fallbackSuggestions.push(
+      'What constitutes a structural defect under Section 14(3) vs normal wear and tear?',
+      'What happens if the promoter fails to rectify reported defects within 30 days?',
+      'How do I file Form N before the Adjudicating Officer for compensation?'
+    );
+  } else if (isEscrowQuery) {
+    fallbackSuggestions.push(
+      'What are the statutory withdrawal conditions from the 70% separate escrow account?',
+      'How can homebuyers check quarterly escrow account audit reports on the K-RERA portal?',
+      'What penalties apply under Section 60/61 if a promoter diverts escrow funds?'
+    );
+  } else if (isLitigationQuery) {
+    fallbackSuggestions.push(
+      'How does an active civil court injunction suit affect K-RERA complaint proceedings?',
+      'What is the legal difference between an Original Suit (OS) and a K-RERA complaint?',
+      'How do I verify if there is an active land title dispute on the project property?'
+    );
+  } else if (isAggregationQuery) {
+    fallbackSuggestions.push(
+      'Which districts in Karnataka have the highest number of registered delayed projects?',
+      'Can you list all registered projects developed by this promoter with completion status?',
+      'What is the total estimated construction cost across active projects in Bengaluru Urban?'
+    );
+  } else {
+    fallbackSuggestions.push(
+      'What are the mandatory statutory documents to inspect before purchasing an apartment in Karnataka?',
+      'How do I verify the K-RERA registration status and approved plan of a project?',
+      'What is the difference between filing Form M before the Authority and Form N before the Adjudicating Officer?'
+    );
+  }
+
+  response += `\n\n<!--SUGGESTIONS:${JSON.stringify(fallbackSuggestions)}-->`;
+
   return response;
 }
+

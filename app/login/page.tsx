@@ -49,11 +49,13 @@ function LoginForm() {
 
       const supabase = createClient();
       const origin = window.location.origin;
+      const next = searchParams.get('next');
+      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next || '/')}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/auth/callback`,
+          redirectTo,
         },
       });
 
@@ -70,7 +72,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden z-0 bg-black text-white font-sans select-none p-6">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden z-0 bg-neutral-950 text-white font-sans select-none p-6">
       {/* Cinematic Looping HTML5 Video Background */}
       <video
         autoPlay
@@ -84,7 +86,7 @@ function LoginForm() {
       {/* Top Brand Tag */}
       <header className="absolute top-6 left-6 right-6 max-w-5xl mx-auto flex items-center justify-between z-10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white">
+          <div className="w-8 h-8 rounded-full bg-neutral-900/60 border border-neutral-800 flex items-center justify-center text-white">
             <Scale className="w-4 h-4" />
           </div>
           <span className="font-display font-bold tracking-tight text-base text-white">
@@ -92,21 +94,21 @@ function LoginForm() {
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-zinc-400">
-          <Shield className="w-3.5 h-3.5 text-zinc-300" />
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-900/60 border border-neutral-800 text-xs font-mono text-neutral-400">
+          <Shield className="w-3.5 h-3.5 text-neutral-300" />
           <span>Statutory Grounding</span>
         </div>
       </header>
 
       {/* Center Auth Card */}
       <main className="w-full max-w-md z-10 my-auto">
-        <div className="w-full bg-black/80 border border-white/10 rounded-3xl p-8 sm:p-10 backdrop-blur-xl transition-all shadow-2xl">
+        <div className="w-full bg-neutral-900/80 border border-neutral-800 rounded-3xl p-8 sm:p-10 backdrop-blur-xl transition-all shadow-2xl">
           {/* Header */}
           <div className="text-center space-y-2 mb-8">
             <h1 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
               Sign in to REAA
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 font-sans leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-400 font-sans leading-relaxed">
               Karnataka Real Estate Regulatory Authority Advisory Intelligence
             </p>
           </div>
@@ -124,29 +126,29 @@ function LoginForm() {
             <button
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white text-black font-semibold rounded-full px-6 py-3.5 hover:bg-zinc-200 active:scale-[0.99] transition-all text-sm sm:text-base cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
+              className="w-full flex items-center justify-center gap-3 bg-neutral-800 text-neutral-50 border border-neutral-700 font-semibold rounded-full px-6 py-3.5 hover:bg-neutral-900 active:scale-[0.99] transition-all text-sm sm:text-base cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-none"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <GoogleIcon className="w-5 h-5 shrink-0" />
               )}
               <span>{isLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
             </button>
 
-            <p className="text-center text-[11px] text-zinc-500 font-sans leading-relaxed">
+            <p className="text-center text-[11px] text-neutral-400 font-sans leading-relaxed">
               Authorized access for advocates, allottees, and real estate promoters.
             </p>
           </div>
 
           {/* Multi-tenant Isolation Feature Badges */}
-          <div className="mt-8 pt-6 border-t border-white/10 grid grid-cols-2 gap-2 text-[10px] font-mono text-zinc-400">
-            <div className="flex items-center gap-1.5 p-2 rounded-xl bg-white/[0.02] border border-white/5">
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+          <div className="mt-8 pt-6 border-t border-neutral-800 grid grid-cols-2 gap-2 text-[10px] font-mono text-neutral-400">
+            <div className="flex items-center gap-1.5 p-2 rounded-xl bg-neutral-950/40 border border-neutral-800/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
               <span>Isolated RLS Data</span>
             </div>
-            <div className="flex items-center gap-1.5 p-2 rounded-xl bg-white/[0.02] border border-white/5">
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            <div className="flex items-center gap-1.5 p-2 rounded-xl bg-neutral-950/40 border border-neutral-800/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
               <span>Gazette Synced</span>
             </div>
           </div>
@@ -154,13 +156,13 @@ function LoginForm() {
       </main>
 
       {/* Bottom-Right Circular Legal Scales Emblem (Masks Video Watermark) */}
-      <div className="absolute bottom-[85px] right-[65px] z-20 w-14 h-14 rounded-full bg-black/95 border border-white/20 shadow-[0_0_30px_15px_rgba(0,0,0,0.95)] flex items-center justify-center pointer-events-none">
+      <div className="absolute bottom-[85px] right-[65px] z-20 w-14 h-14 rounded-full bg-neutral-950/95 border border-neutral-800 shadow-[0_0_30px_15px_rgba(2,6,23,0.95)] flex items-center justify-center pointer-events-none">
         <Scale className="w-6 h-6 text-white" />
       </div>
 
       {/* Footer Statutory Disclaimers */}
       <footer className="absolute bottom-4 left-6 right-6 py-2 text-center z-10 pointer-events-none">
-        <p className="text-[11px] font-mono text-zinc-500 leading-relaxed max-w-2xl mx-auto">
+        <p className="text-[11px] font-mono text-neutral-500 leading-relaxed max-w-2xl mx-auto">
           REAA • Karnataka Real Estate Regulatory Authority Intelligence System • Official Gazette Grounded
         </p>
       </footer>
@@ -172,7 +174,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen w-full bg-black text-white flex items-center justify-center font-sans">
+        <div className="min-h-screen w-full bg-neutral-950 text-white flex items-center justify-center font-sans">
           <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       }

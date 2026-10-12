@@ -4,6 +4,12 @@ export type MessageRole = 'user' | 'assistant' | 'system';
 
 export type StreamStatus = 'idle' | 'routing' | 'retrieving' | 'generating' | 'done' | 'error';
 
+export interface MessageAttachment {
+  name: string;
+  size?: number;
+  url?: string;
+}
+
 export interface Message {
   id: string;
   role: MessageRole;
@@ -11,10 +17,12 @@ export interface Message {
   timestamp: number;
   routedNamespaces?: ReraNamespace[];
   citations?: CitationItem[];
+  suggestions?: string[];
   status?: StreamStatus;
   error?: string;
   fileName?: string;
   fileUrl?: string;
+  attachments?: MessageAttachment[];
 }
 
 export interface Conversation {
@@ -27,11 +35,12 @@ export interface Conversation {
 }
 
 export interface StreamEventData {
-  event: 'routing' | 'citations' | 'token' | 'status' | 'error' | 'done';
+  event: 'routing' | 'citations' | 'token' | 'status' | 'suggestions' | 'error' | 'done';
   data?: {
     routedNamespaces?: ReraNamespace[];
     reasoning?: string;
     citations?: CitationItem[];
+    suggestions?: string[];
     text?: string;
     statusText?: string;
     message?: string;
@@ -48,5 +57,6 @@ export interface ChatRequestPayload {
   namespaces?: ReraNamespace[];
   language?: string;
   fileUrl?: string;
+  fileUrls?: string[];
   message?: string;
 }

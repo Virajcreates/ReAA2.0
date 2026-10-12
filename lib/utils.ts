@@ -44,24 +44,78 @@ export function getNamespaceBadgeClasses(namespace: ReraNamespace): {
     case 'rera-projects':
     case 'rera-links':
       return {
-        bg: 'bg-white/5',
-        text: 'text-white',
-        border: 'border-white/12',
-        dot: 'bg-white',
+        bg: 'bg-neutral-300',
+        text: 'text-neutral-900',
+        border: 'border-neutral-400',
+        dot: 'bg-neutral-800',
       };
     case 'supabase-sql':
       return {
-        bg: 'bg-white/10',
-        text: 'text-white',
-        border: 'border-white/20',
-        dot: 'bg-white',
+        bg: 'bg-neutral-300',
+        text: 'text-neutral-900',
+        border: 'border-neutral-400',
+        dot: 'bg-neutral-800',
       };
     default:
       return {
-        bg: 'bg-white/5',
-        text: 'text-zinc-300',
-        border: 'border-white/10',
-        dot: 'bg-zinc-400',
+        bg: 'bg-neutral-300',
+        text: 'text-neutral-800',
+        border: 'border-neutral-400',
+        dot: 'bg-neutral-600',
       };
   }
 }
+
+/**
+ * Extracts and strips dynamic follow-up suggestion questions from assistant message text.
+ * Prevents raw <!--SUGGESTIONS:[...]--> tags from leaking into markdown narrative during and after streaming.
+ */
+export function extractSuggestionsFromContent(text: string): {
+  cleanContent: string;
+  suggestions: string[];
+} {
+  if (!text) {
+    return { cleanContent: '', suggestions: [] };
+  }
+
+  let suggestions: string[] = [];
+
+  // Match complete <!--SUGGESTIONS:[ ... ]--> block
+  const match = text.match(/<!--\s*SUGGESTIONS:\s*(\[[\s\S]*?\])\s*-->/i);
+  if (match) {
+    const rawJson = match[1];
+    try {
+      const parsed = JSON.parse(rawJson);
+      if (Array.isArray(parsed)) {
+        suggestions = parsed
+          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+          .map((item) => item.trim())
+          .slice(0, 3);
+      }
+    } catch {
+      // Fallback regex extraction in case of trailing commas or slight syntax variations
+      const stringMatches = rawJson.match(/(?:"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)')/g);
+      if (stringMatches) {
+        suggestions = stringMatches
+          .map((s) => s.slice(1, -1).trim())
+          .filter((s) => s.length > 0)
+          .slice(0, 3);
+      }
+    }
+  }
+
+  // Strip completed suggestions block
+  let cleanContent = text.replace(/<!--\s*SUGGESTIONS:[\s\S]*?-->/gi, '');
+
+  // Strip in-flight / partial suggestion block actively streaming at the end
+  const partialIdx = cleanContent.search(/<!--\s*SUGGESTIONS/i);
+  if (partialIdx !== -1) {
+    cleanContent = cleanContent.substring(0, partialIdx);
+  }
+
+  return {
+    cleanContent: cleanContent.trimEnd(),
+    suggestions,
+  };
+}
+

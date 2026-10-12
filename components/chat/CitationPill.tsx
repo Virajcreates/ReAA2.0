@@ -32,26 +32,26 @@ export function CitationPill({ citation, index }: CitationPillProps) {
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-blue-400/30 bg-blue-400/5 hover:bg-blue-400/10 text-blue-400 transition-all cursor-pointer text-left font-sans"
+        className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-neutral-400 bg-neutral-300/80 hover:bg-neutral-300 text-neutral-800 hover:text-neutral-950 transition-all cursor-pointer text-left font-sans shadow-xs"
         title="Click to view retrieved statutory citation and ruling context"
       >
-        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-blue-400 text-black font-mono text-[10px] font-bold">
+        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-neutral-800 text-neutral-50 font-mono text-[10px] font-bold shadow-xs">
           {index + 1}
         </span>
 
-        <span className="flex items-center gap-1 text-blue-400">
+        <span className="flex items-center gap-1 text-neutral-800">
           {getNamespaceIcon()}
         </span>
 
-        <span className="max-w-[200px] truncate font-medium text-blue-400 group-hover:text-blue-300 transition-colors">
+        <span className="max-w-[200px] truncate font-medium text-neutral-900 group-hover:text-neutral-950 transition-colors">
           {citation.section || citation.title}
         </span>
 
-        <span className="text-[10px] text-blue-400/70 font-mono">
+        <span className="text-[10px] text-neutral-600 font-mono">
           {(citation.score * 100).toFixed(0)}%
         </span>
 
-        <ChevronRight className="w-3 h-3 text-blue-400/60 group-hover:text-blue-300 group-hover:translate-x-0.5 transition-all" />
+        <ChevronRight className="w-3 h-3 text-neutral-600 group-hover:text-neutral-900 group-hover:translate-x-0.5 transition-all" />
       </button>
 
       <CitationModal
