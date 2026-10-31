@@ -1,7 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as readline from 'readline';
+import { getAstraLinksCollection } from './astra/client';
+import { generateEmbedding } from './gemini';
 
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -39,15 +38,22 @@ export interface SqlExecutionResult {
 }
 
 /**
- * Helper to query local krera_project_documents_final.csv when project_documents is queried via SQL
+ * Helper to query Astra DB 'rera_links' collection when project_documents is queried via SQL
+ * Cloud-native document link search across local development and production.
  */
-async function queryProjectDocumentsCsv(sqlQuery: string): Promise<any[] | null> {
-  const csvPath = path.resolve(process.cwd(), 'krera_project_documents_final.csv');
-  if (!fs.existsSync(csvPath)) return null;
+async function queryProjectDocumentsAstra(sqlQuery: string): Promise<any[] | null> {
+  const collection = getAstraLinksCollection();
+  if (!collection) {
+    console.warn('Astra collection unavailable for project_documents fallback.');
+    return null;
+  }
 
   try {
     const projMatch = sqlQuery.match(/project_name\s+ILIKE\s+'%([^%']+)%'/i);
     const projectName = projMatch ? projMatch[1] : '';
+
+    const regMatch = sqlQuery.match(/(?:krera_)?registration_number\s*(?:=|ILIKE)\s*'%?([^%']+)%?'/i);
+    const regNumber = regMatch ? regMatch[1] : '';
 
     const docRegex = /document_name\s+ILIKE\s+'%([^%']+)%'/gi;
     let keywords: string[] = [];
@@ -61,47 +67,176 @@ async function queryProjectDocumentsCsv(sqlQuery: string): Promise<any[] | null>
       keywords = Array.from(new Set([...keywords, 'airport', 'aai', 'noc']));
     }
 
+    const limitMatch = sqlQuery.match(/LIMIT\s+(\d+)/i);
+    const limit = limitMatch ? parseInt(limitMatch[1], 10) : 50;
+
     const projectRegex = projectName ? new RegExp(projectName, 'i') : null;
     const keywordRegexes = keywords.map((kw) => new RegExp(kw, 'i'));
 
-    const fileStream = fs.createReadStream(csvPath);
-    const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+    let allChunks: any[] = [];
+
+    // Case 1: When projectName is present (or exact regNumber is present)
+    if (projectName || regNumber) {
+      const targetRegNumbers: string[] = [];
+      if (regNumber) {
+        targetRegNumbers.push(regNumber);
+      }
+
+      // a) Resolve matching registration_numbers from Supabase krera_projects
+      if (projectName) {
+        try {
+          const supabase = getSupabaseClient();
+          if (supabase) {
+            const { data: supaProjects } = await supabase
+              .from('krera_projects')
+              .select('registration_number, project_name')
+              .ilike('project_name', `%${projectName}%`);
+
+            if (supaProjects && Array.isArray(supaProjects)) {
+              for (let i = 0; i < supaProjects.length; i++) {
+                const reg = supaProjects[i]?.registration_number;
+                if (reg && !targetRegNumbers.includes(reg)) {
+                  targetRegNumbers.push(reg);
+                }
+              }
+            }
+          }
+        } catch (supaErr) {
+          console.warn('Could not query Supabase krera_projects for registration resolution:', supaErr);
+        }
+
+        // b) If no registration numbers were found from Supabase, run Astra vector search on project name only
+        if (targetRegNumbers.length === 0) {
+          try {
+            const projEmbedding = await generateEmbedding(`Project Name: ${projectName}`);
+            if (projEmbedding && projEmbedding.length > 0) {
+              const projCursor = collection.find(
+                {},
+                { limit: 25, sort: { $vector: projEmbedding }, includeSimilarity: true }
+              );
+              const projChunks = await projCursor.toArray();
+              for (let i = 0; i < projChunks.length; i++) {
+                const chunk = projChunks[i];
+                const chunkProjName = chunk.project_name || '';
+                const chunkText = chunk.text || '';
+                if ((projectRegex && projectRegex.test(chunkProjName)) || (projectRegex && projectRegex.test(chunkText))) {
+                  const reg = chunk.registration_number;
+                  if (reg && !targetRegNumbers.includes(reg)) {
+                    targetRegNumbers.push(reg);
+                  }
+                }
+              }
+            }
+          } catch (projEmbedErr) {
+            console.warn('Failed project name vector lookup in Astra:', projEmbedErr);
+          }
+        }
+      }
+
+      // c) For each matched registration_number, query Astra DB exact filter { registration_number: regNum }
+      for (let i = 0; i < targetRegNumbers.length; i++) {
+        const regNum = targetRegNumbers[i];
+        try {
+          const regCursor = collection.find({ registration_number: regNum }, { limit: 30 });
+          const regChunks = await regCursor.toArray();
+          for (let j = 0; j < regChunks.length; j++) {
+            const rc = regChunks[j];
+            const rcId = rc._id || rc.id;
+            if (!allChunks.some((c) => (c._id || c.id) === rcId)) {
+              allChunks.push(rc);
+            }
+          }
+        } catch (fetchErr) {
+          console.warn(`Error fetching chunks for registration ${regNum}:`, fetchErr);
+        }
+      }
+    } else {
+      // Case 2: When projectName is NOT present in the SQL query (global queries like "any 5 airport NOCs")
+      const docText = keywords.length > 0 ? keywords.join(' ') : 'statutory approval NOC clearance';
+      let queryVector: number[] = [];
+      try {
+        queryVector = await generateEmbedding(docText);
+      } catch (embedErr) {
+        console.warn('Failed to generate embedding for Astra project_documents search:', embedErr);
+      }
+
+      const options: any = {
+        limit: 25,
+        includeSimilarity: true,
+      };
+      if (queryVector && queryVector.length > 0) {
+        options.sort = { $vector: queryVector };
+      }
+
+      const cursor = collection.find({}, options);
+      allChunks = await cursor.toArray();
+    }
 
     const results: any[] = [];
-    let isHeader = true;
+    const seenLinks = new Set<string>();
 
-    for await (const line of rl) {
-      if (isHeader) {
-        isHeader = false;
+    for (let i = 0; i < allChunks.length; i++) {
+      const chunk = allChunks[i];
+      const chunkProjName = chunk.project_name || '';
+      if (projectRegex && !projectRegex.test(chunkProjName)) {
         continue;
       }
-      if (projectRegex && !projectRegex.test(line)) continue;
 
-      const lastComma = line.lastIndexOf(',');
-      const docLink = line.substring(lastComma + 1).trim();
-      const rest = line.substring(0, lastComma);
-      const secondLastComma = rest.lastIndexOf(',');
-      const docName = rest.substring(secondLastComma + 1).trim();
-      const thirdLastComma = rest.substring(0, secondLastComma).lastIndexOf(',');
-      const fourthLastComma = rest.substring(0, thirdLastComma).lastIndexOf(',');
-      const fifthLastComma = rest.substring(0, fourthLastComma).lastIndexOf(',');
-      const projName = rest.substring(0, fifthLastComma).trim();
+      const docItems: Array<{ document_name: string; document_link: string }> = [];
 
-      if (keywordRegexes.length === 0 || keywordRegexes.some((r) => r.test(docName))) {
-        results.push({
-          project_name: projName,
-          document_name: docName,
-          document_link: docLink,
-        });
+      // Parse from structured documents array if present
+      if (Array.isArray(chunk.documents)) {
+        for (let dIdx = 0; dIdx < chunk.documents.length; dIdx++) {
+          const d = chunk.documents[dIdx];
+          const docName = d.document_name || d.name || '';
+          const docLink = d.document_link || d.link || '';
+          if (docLink) {
+            docItems.push({ document_name: docName, document_link: docLink });
+          }
+        }
+      }
+
+      // Parse from chunk.text lines (Astra DB format: 1. <name> - <link>)
+      if (docItems.length === 0 && typeof chunk.text === 'string') {
+        const lines = chunk.text.split('\n');
+        for (let lIdx = 0; lIdx < lines.length; lIdx++) {
+          const line = lines[lIdx];
+          const lineMatch = line.match(/^\d+\.\s+(.+?)\s+-\s+(https?:\/\/\S+)/i);
+          if (lineMatch) {
+            docItems.push({
+              document_name: lineMatch[1].trim(),
+              document_link: lineMatch[2].trim(),
+            });
+          }
+        }
+      }
+
+      for (let dIdx = 0; dIdx < docItems.length; dIdx++) {
+        const doc = docItems[dIdx];
+        const docName = doc.document_name;
+        const docLink = doc.document_link;
+
+        if (seenLinks.has(docLink)) continue;
+
+        if (keywordRegexes.length === 0 || keywordRegexes.some((r) => r.test(docName))) {
+          seenLinks.add(docLink);
+          results.push({
+            project_name: chunkProjName,
+            document_name: docName,
+            document_link: docLink,
+          });
+        }
       }
     }
 
-    return results;
+    console.log(`[ASTRA DB DOCS] Retrieved ${results.length} matching documents for SQL query.`);
+    return results.slice(0, limit);
   } catch (err) {
-    console.error('Error querying project documents CSV:', err);
+    console.error('Error querying project documents Astra DB:', err);
     return null;
   }
 }
+
 
 /**
  * Execute an agentic read-only SQL query against the Supabase PostgreSQL database
@@ -130,33 +265,20 @@ export async function runAgenticSql(sqlQuery: string): Promise<SqlExecutionResul
     };
   }
 
-  // If querying project_documents table, query the document repository
+  // If querying project_documents table, query Astra DB directly (100% cloud-native)
   if (/FROM\s+project_documents\b/i.test(cleanSql)) {
-    const csvData = await queryProjectDocumentsCsv(cleanSql);
-    if (csvData !== null && csvData.length > 0) {
-      return {
-        success: true,
-        sql: cleanSql,
-        data: csvData,
-        rowCount: csvData.length,
-      };
-    }
+    const docResults = await queryProjectDocumentsAstra(cleanSql);
+    const data = docResults || [];
+    return {
+      success: true,
+      sql: cleanSql,
+      data,
+      rowCount: data.length,
+    };
   }
 
   const supabase = getSupabaseClient();
   if (!supabase) {
-    // If Supabase is unconfigured but project documents were queried, try CSV
-    if (/FROM\s+project_documents\b/i.test(cleanSql)) {
-      const csvData = await queryProjectDocumentsCsv(cleanSql);
-      if (csvData !== null) {
-        return {
-          success: true,
-          sql: cleanSql,
-          data: csvData,
-          rowCount: csvData.length,
-        };
-      }
-    }
     return {
       success: false,
       sql: cleanSql,
@@ -175,13 +297,13 @@ export async function runAgenticSql(sqlQuery: string): Promise<SqlExecutionResul
 
       // Fallback for project_documents if the table does not exist in Supabase
       if (/project_documents/i.test(cleanSql) || /project_documents/i.test(error.message)) {
-        const csvData = await queryProjectDocumentsCsv(cleanSql);
-        if (csvData !== null) {
+        const docData = await queryProjectDocumentsAstra(cleanSql);
+        if (docData !== null) {
           return {
             success: true,
             sql: cleanSql,
-            data: csvData,
-            rowCount: csvData.length,
+            data: docData,
+            rowCount: docData.length,
           };
         }
       }

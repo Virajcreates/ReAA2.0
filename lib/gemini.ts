@@ -19,3 +19,4 @@ export function getGeminiClient(): GoogleGenerativeAI | null {
 export const GEMINI_CHAT_MODEL = process.env.GEMINI_CHAT_MODEL || 'gemini-3.5-flash';
 export const GEMINI_FALLBACK_MODEL = 'gemini-3.5-flash';
 export const GEMINI_EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
+export { generateEmbedding } from './rag/embeddings';
