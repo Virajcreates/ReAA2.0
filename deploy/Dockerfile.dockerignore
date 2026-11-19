@@ -1,0 +1,59 @@
+# Build context filter for deploy/Dockerfile (BuildKit reads it because it is
+# named <Dockerfile>.dockerignore). Only what "next build" and the server need.
+
+# Version control, CI and deploy tooling
+.git
+.github
+deploy
+!deploy/redirect-host.cjs
+.gitignore
+**/.DS_Store
+
+# Secrets and local settings (never in the image)
+.env
+.env*
+**/.env
+**/.env.*
+*.pem
+*.key
+
+# Dependencies and build output (installed / built inside the image)
+node_modules
+**/node_modules
+.next
+out
+build
+dist
+*.tsbuildinfo
+
+# Python virtual environments, caches (including committed ones)
+venv
+.venv
+**/venv
+**/.venv
+**/__pycache__
+**/*.pyc
+
+# Local data, databases, logs
+*.csv
+**/*.csv
+*.db
+*.sqlite
+*.sqlite3
+*.log
+scratch
+
+# Not needed at run time: tests, data-loading and diagnostic scripts,
+# database migrations, docs, decks, audit material
+tests
+temp_ingestion
+temp_supabase_ingestion
+temp_astra_ingestion
+temp_diagnostics
+scripts
+supabase
+audit_charts
+visualize_audit_results.py
+*.pptx
+*.md
+reaa-version-history.html
