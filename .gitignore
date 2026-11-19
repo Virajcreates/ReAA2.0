@@ -53,3 +53,7 @@ __pycache__/
 *.sw?
 .idea/
 .vscode/
+
+# Azure deploy settings (secrets; never commit)
+.env.azure
+.env.azure.bak
